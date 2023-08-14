@@ -1,0 +1,11 @@
+.parcel-cache
+.phpunit.result.cache
+.vscode
+*.Ds_Store
+dist
+node_modules
+puddle.env
+puddle.sqlite
+puddle.sqlite-shm
+puddle.sqlite-wal
+secret.env

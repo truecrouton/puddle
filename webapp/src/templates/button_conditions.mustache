@@ -1,0 +1,6 @@
+{{#conditions}}
+<a href="javascript:void(0);" class="btn btn-secondary btn-sm rounded-pill" role="button" data-bs-toggle="modal" data-bs-target="#modalCondition" data-automation-step-id="{{step_id}}" data-condition-id="{{condition_id}}">
+    {{left_preset}}{{left_topic}}{{left_topic_key}}{{left_value}} {{#conditionKind}}{{kind}}{{/conditionKind}} {{right_preset}}{{right_topic}}{{right_topic_key}}{{right_value}}
+</a>
+{{/conditions}}
+<a class="fs-4 align-middle" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalCondition" data-automation-step-id="{{step_id}}"><i class="bi bi-plus-circle-fill"></i></a>

@@ -1,0 +1,41 @@
+<table class="table px-0">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Devices</th>
+            <th scope="col">Automations</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#topics}}
+        <tr>
+            <th scope="row">
+                <a class="text-decoration-none" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalTopic" data-topic-id="{{topic_id}}">{{topic}}</a>
+            </th>
+            <td>
+                <h5 class="mb-0">
+                    {{#devices}}
+                    <span class="badge rounded-pill text-bg-warning mb-2">
+                        <a href="./devices.html?device_id={{device_id}}" class="text-decoration-none text-dark"><i class="bi bi-{{#kindIcon}}{{kind}}{{/kindIcon}}"></i> {{name}}</a>
+                    </span>
+                    {{/devices}}
+                </h5>
+            </td>
+            <td>
+                <h5 class="mb-0">
+                    {{#automations}}
+                    <span class="badge rounded-pill text-bg-warning mb-2">
+                        <a href="./automation.html?automation_id={{automation_id}}" class="text-decoration-none text-dark"><i class="bi bi-{{#kindIcon}}{{trigger}}{{/kindIcon}}"></i> {{name}}</a>
+                    </span>
+                    {{/automations}}
+                    {{#automations_containing}}
+                    <span class="badge rounded-pill text-bg-light mb-2">
+                        <a href="./automation.html?automation_id={{automation_id}}" class="text-decoration-none text-dark"><i class="bi bi-{{#kindIcon}}{{trigger}}{{/kindIcon}}"></i> {{name}}</a>
+                    </span>
+                    {{/automations_containing}}
+                </h5>
+            </td>
+        </tr>
+        {{/topics}}
+    </tbody>
+</table>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/login.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="./images/puddle.svg" class="d-inline-block" width="74" height="22" alt="Puddle">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{setup}}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalUserAdd">Add User</button>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modalPasswordReset">Reset Password</button>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">Home automation with mqtt</h1>
+        <p class="col-md-8 fs-4">A simple home control and automation runner for mqtt. Provides an API for custom frontends or use the included web interface. Runs on node.js.</p>
+
+        <div id="divFavoriteStates"></div>
+
+        <p class="col-md-8 fs-4 mt-3">Sign in to continue.</p>
+
+        <div class="row justify-content-start my-3">
+            <div class="col-md-4">
+                <div class="alert alert-danger pdl-error-page d-none" role="alert"></div>
+                <form id="formSignIn">
+                    <div class="mb-3">
+                        <label for="inputUsername" class="form-label">Username</label>
+                        <input type="text" minlength="1" maxlength="30" class="form-control" id="inputUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="inputPassword" class="form-label">Password</label>
+                        <input type="password" minlength="8" maxlength="30" class="form-control" id="inputPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Sign In</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalUserAdd" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formUserAdd">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Add User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="inputAddUsername" class="form-label">Username</label>
+                                <input type="text" minlength="1" maxlength="30" class="form-control" id="inputAddUsername" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputAddPassword" class="form-label">Password</label>
+                                <input type="password" minlength="8" maxlength="30" class="form-control" id="inputAddPassword" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="selectAdmin" class="form-label">Administrator</label>
+                                <select id="selectAdmin" class="form-select" required>
+                                    <option value="0" selected>No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-9">
+                                <label for="inputAddName" class="form-label">Display Name</label>
+                                <input type="text" minlength="1" maxlength="50" class="form-control" id="inputAddName">
+                            </div>
+                            <div class="col-12">
+                                <label for="inputAddAuthPhrase" class="form-label">Authorization Phrase</label>
+                                <input type="text" minlength="1" maxlength="30" class="form-control" id="inputAddAuthPhrase" required>
+                                <small id="small-display-name" class="form-text text-muted">Required to authorize this action.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPasswordReset" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formPasswordReset">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Reset Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="inputResetUsername" class="form-label">Username</label>
+                                <input type="text" minlength="1" maxlength="30" class="form-control" id="inputResetUsername" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputResetPassword" class="form-label">New Password</label>
+                                <input type="password" minlength="8" maxlength="30" class="form-control" id="inputResetPassword" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="inputResetAuthPhrase" class="form-label">Authorization Phrase</label>
+                                <input type="text" minlength="1" maxlength="30" class="form-control" id="inputResetAuthPhrase" required>
+                                <small id="small-display-name" class="form-text text-muted">Required to authorize this action.</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>

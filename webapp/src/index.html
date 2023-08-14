@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/index.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <include src="./elements/navbar.html"></include>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">Home automation with mqtt</h1>
+        <p class="col-md-8 fs-4">A simple home control and automation runner for mqtt. Provides an API for custom frontends or use the included web interface. Runs on node.js.</p>
+        <div id="divFavoriteStates"></div>
+
+        <h3>
+            <i class="bi bi-cursor-fill"></i>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./control.html" class="text-decoration-none text-dark">Control</a>
+            </span>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./devices.html" class="text-decoration-none text-dark">Devices</a>
+            </span>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./automations.html" class="text-decoration-none text-dark">Automations</a>
+            </span>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./topics.html" class="text-decoration-none text-dark">Topics</a>
+            </span>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./schedule.html" class="text-decoration-none text-dark">Schedule</a>
+            </span>
+            <span class="badge rounded-pill text-bg-warning">
+                <a href="./charts.html" class="text-decoration-none text-dark">Charts</a>
+            </span>
+        </h3>
+    </div>
+
+    <a href="./401.html" class="d-none"></a>
+    <a href="./404.html" class="d-none"></a>
+    <a href="./automation.html" class="d-none"></a>
+    <a href="./login.html" class="d-none"></a>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>

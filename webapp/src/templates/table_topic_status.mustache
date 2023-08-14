@@ -1,0 +1,16 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col" width="40%">Status <i class="bi bi-caret-up"></i></th>
+            <th scope="col" width="60%">Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#status}}
+        <tr>
+            <td scope="col">{{name}}</td>
+            <td scope="col"><code>{{value}}</code></td>
+        </tr>
+        {{/status}}
+    </tbody>
+</table>

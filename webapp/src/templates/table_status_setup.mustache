@@ -1,0 +1,23 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">State Key <i class="bi bi-caret-up"></i></th>
+            <th scope="col">Value</th>
+            <th scope="col">Display Name</th>
+            <th scope="col" class="text-end">Show</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#status}}
+        <tr class="rotate-zero">
+            <td scope="col">
+                <code>{{status_key}}</code>
+                <a class="stretched-link" href="javascript:void(0)" data-device-id="{{device_id}}" data-status-key="{{status_key}}" data-status-key-id=""></a>
+            </td>
+            <td scope="col">{{value}}</td>
+            <td scope="col">{{name}}</td>
+            <td scope="col" class="text-end">{{#formatChecked}}{{is_shown}}{{/formatChecked}}</td>
+        </tr>
+        {{/status}}
+    </tbody>
+</table>

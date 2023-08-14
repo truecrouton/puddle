@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/automation.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <include src="./elements/navbar.html"></include>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">
+            <a class="text-decoration-none" href="./automations.html"><i class="bi bi-arrow-up-circle"></i></a>
+            Setup this automation
+        </h1>
+        <p class="col-12 fs-4">
+            You're setting up the automation named <strong id="strongName"></strong>.
+            <a class="text-decoration-none" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalSettings"><i class="bi bi-gear"></i></a>
+        </p>
+    </div>
+
+    <div class="container" id="divSteps"></div>
+
+    <div class="modal fade" id="modalCondition" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formCondition">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Condition</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="selectLeftOperandKind" class="form-label">Left Operand Type</label>
+                                <select id="selectLeftOperandKind" class="form-select" required>
+                                    <option value="" selected>Select Type</option>
+                                    <option value="preset">Preset</option>
+                                    <option value="topic">Topic</option>
+                                    <option value="value">Value</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="selectConditionKind" class="form-label">Operand</label>
+                                <select id="selectConditionKind" class="form-select" required>
+                                    <option value="" selected>Select Type</option>
+                                    <option value="and">And</option>
+                                    <option value="dec">Decreases Below</option>
+                                    <option value="eq">Equals</option>
+                                    <option value="gt">Greater Than</option>
+                                    <option value="gte">Greater Than or Equal To</option>
+                                    <option value="inc">Increases Above</option>
+                                    <option value="leq">Last Equal To</option>
+                                    <option value="lgt">Last Greater Than</option>
+                                    <option value="llt">Last Less Than</option>
+                                    <option value="lneq">Last Not Equal To</option>
+                                    <option value="lt">Less Than</option>
+                                    <option value="lte">Less Than or Equal To</option>
+                                    <option value="neq">Not Equal</option>
+                                    <option value="or">Or</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="selectRightOperandKind" class="form-label">Right Operand Type</label>
+                                <select id="selectRightOperandKind" class="form-select" required>
+                                    <option value="" selected>Select Type</option>
+                                    <option value="preset">Preset</option>
+                                    <option value="topic">Topic</option>
+                                    <option value="value">Value</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 row g-3 m-0 p-0">
+                                <div class="col-12" id="divLeftConditionPreset">
+                                    <label for="selectLeftPreset" class="form-label">Left Preset</label>
+                                    <select id="selectLeftPreset" class="form-select">
+                                        <option value="" selected>Select Preset</option>
+                                        <option value="date">Date</option>
+                                        <option value="time">Time</option>
+                                        <option value="month">Month</option>
+                                        <option value="day">Day</option>
+                                        <option value="season_northern">Season (Northern)</option>
+                                        <option value="season_southern">Season (Southern)</option>
+                                        <option value="sun_position">Sun Position</option>
+                                    </select>
+                                </div>
+                                <div class="col-12" id="divLeftConditionValue">
+                                    <label for="inputLeftValue" class="form-label">Left Value</label>
+                                    <input type="text" class="form-control" id="inputLeftValue">
+                                </div>
+                                <div class="col-12 row g-3 m-0 p-0" id="divLeftConditionTopic">
+                                    <div class="col-12">
+                                        <label for="selectLeftTopic" class="form-label">Left Topic</label>
+                                        <select id="selectLeftTopic" class="form-select">
+                                            <option value="" selected>Select Topic</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="inputLeftTopicKey" class="form-label">Left Topic Key</label>
+                                        <input type="text" class="form-control" id="inputLeftTopicKey">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 row g-3 m-0 p-0">
+                                <div class="col-12" id="divRightConditionPreset">
+                                    <label for="selectRightPreset" class="form-label">Right Preset</label>
+                                    <select id="selectRightPreset" class="form-select">
+                                        <option value="" selected>Select Preset</option>
+                                        <option value="date">Date</option>
+                                        <option value="time">Time</option>
+                                        <option value="month">Month</option>
+                                        <option value="day">Day</option>
+                                        <option value="season_northern">Season (Northern)</option>
+                                        <option value="season_southern">Season (Southern)</option>
+                                        <option value="sun_position">Sun Position</option>
+                                    </select>
+                                </div>
+                                <div class="col-12" id="divRightConditionValue">
+                                    <label for="inputRightValue" class="form-label">Right Value</label>
+                                    <input type="text" class="form-control" id="inputRightValue">
+                                </div>
+                                <div class="col-12 row g-3 m-0 p-0" id="divRightConditionTopic">
+                                    <div class="col-12">
+                                        <label for="selectRightTopic" class="form-label">Right Topic</label>
+                                        <select id="selectRightTopic" class="form-select">
+                                            <option value="" selected>Select Topic</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="inputRightTopicKey" class="form-label">Right Topic Key</label>
+                                        <input type="text" class="form-control" id="inputRightTopicKey">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" id="buttonConditionDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalSettings" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formSettings">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Automation Settings</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <label for="inputName" class="form-label">Automation Name</label>
+                                <input type="text" class="form-control" id="inputName" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label for="selectTriggerType" class="form-label">Trigger Type</label>
+                                <select id="selectTriggerType" class="form-select" required>
+                                    <option value="" selected>Select Trigger Type</option>
+                                    <option value="sun">Sun Position</option>
+                                    <option value="time">Time</option>
+                                    <option value="topic">Topic</option>
+                                    <option value="user">User</option>
+                                </select>
+                            </div>
+                            <div class="col-12" id="divTriggerPosition">
+                                <label for="selectTriggerPosition" class="form-label">Sun Position</label>
+                                <select id="selectTriggerPosition" class="form-select">
+                                    <option value="" selected>Select Sun Position</option>
+                                    <option value="afternoon">Afternoon</option>
+                                    <option value="dawn">Dawn</option>
+                                    <option value="dusk">Dusk</option>
+                                    <option value="evening">Evening</option>
+                                    <option value="goldenHour">Golden Hour</option>
+                                    <option value="goldenHourEnd">Golden Hour End</option>
+                                    <option value="nadir">Nadir</option>
+                                    <option value="morning">Morning</option>
+                                    <option value="lateMorning">Late Morning</option>
+                                    <option value="nauticalDawn">Nautical Dawn</option>
+                                    <option value="nauticalDusk">Nautical Dusk</option>
+                                    <option value="night">Night</option>
+                                    <option value="nightEnd">Night End</option>
+                                    <option value="solarNoon">Solar Noon</option>
+                                    <option value="sunrise">Sunrise</option>
+                                    <option value="sunriseEnd">Sunrise End</option>
+                                    <option value="sunset">Sunset</option>
+                                    <option value="sunsetStart">Sunset Start</option>
+                                </select>
+                            </div>
+                            <div class="col-12" id="divTriggerTime">
+                                <label for="inputTriggerTime" class="form-label">Trigger Time</label>
+                                <input type="text" maxlength="5" class="form-control" placeholder="00:00" id="inputTriggerTime">
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divTriggerTopic">
+                                <div class="col-12">
+                                    <label for="selectTriggerTopic" class="form-label">Trigger Topic</label>
+                                    <select id="selectTriggerTopic" class="form-select">
+                                        <option value="" selected>Select Topic</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="inputTriggerKey" class="form-label">Trigger Key</label>
+                                    <input type="text" class="form-control" id="inputTriggerKey">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="inputTriggerValue" class="form-label">Required Key Value</label>
+                                    <input type="text" class="form-control" id="inputTriggerValue">
+                                </div>
+                            </div>
+                            <div class="col-12" id="divUserControlShown">
+                                <label for="selectUserControlShown" class="form-label">Show as Control</label>
+                                <select id="selectUserControlShown" class="form-select">
+                                    <option value="0">No</option>
+                                    <option value="1" selected>Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" id="buttonAutomationDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalAutomationStep" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formAutomationStep">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Automation Step</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="selectAutomationStepKind" class="form-label">Type</label>
+                                <select id="selectAutomationStepKind" class="form-select">
+                                    <option value="" selected>Select Type</option>
+                                    <option value="if">If/Else</option>
+                                    <option value="notify">Notify</option>
+                                    <option value="publish">Publish</option>
+                                    <option value="wait">Wait</option>
+                                </select>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divAutomationPublish">
+                                <div class="col-12">
+                                    <label for="selectAutomationStepTopic" class="form-label">Trigger Topic</label>
+                                    <select id="selectAutomationStepTopic" class="form-select">
+                                        <option value="" selected>Select Topic</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="inputAutomationStepMessage" class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="inputAutomationStepMessage">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" id="buttonAutomationStepDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalConditionalStep" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formConditionalStep">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Conditional Step</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="selectConditionalStepKind" class="form-label">Type</label>
+                                <select id="selectConditionalStepKind" class="form-select">
+                                    <option value="" selected>Select Type</option>
+                                    <option value="notify">Notify</option>
+                                    <option value="publish">Publish</option>
+                                    <option value="wait">Wait</option>
+                                </select>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divConditionalPublish">
+                                <div class="col-12">
+                                    <label for="selectConditionalStepTopic" class="form-label">Trigger Topic</label>
+                                    <select id="selectConditionalStepTopic" class="form-select">
+                                        <option value="" selected>Select Topic</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="inputConditionalStepMessage" class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="inputConditionalStepMessage">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" id="buttonConditionalStepDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>

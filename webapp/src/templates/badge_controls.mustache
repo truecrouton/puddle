@@ -1,0 +1,14 @@
+<h3>
+    {{#controls}}
+    {{#device_id}}
+    <span class="badge rounded-pill text-bg-warning mb-2">
+        <a href="javascript:void(0);" class="text-decoration-none text-dark" data-bs-toggle="modal" data-bs-target="#modalControl" data-device-id="{{device_id}}"><i class="bi bi-{{#kindIcon}}{{state}}{{/kindIcon}}"></i> {{name}}</a>
+    </span>
+    {{/device_id}}
+    {{#automation_id}}
+    <span class="badge rounded-pill text-bg-warning mb-2">
+        <a href="javascript:void(0);" class="text-decoration-none text-dark" data-bs-toggle="modal" data-bs-target="#modalAutomation" data-automation-id="{{automation_id}}"><i class="bi bi-{{#kindIcon}}{{trigger}}{{/kindIcon}}"></i> {{name}}</a>
+    </span>
+    {{/automation_id}}
+    {{/controls}}
+</h3>

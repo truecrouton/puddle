@@ -1,0 +1,18 @@
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col" width="30%">Other Status <i class="bi bi-caret-up"></i></th>
+            <th scope="col" width="45%">Value</th>
+            <th scope="col" width="25%">Key</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#status}}
+        <tr style="transform: rotate(0);">
+            <td scope="col">{{name}}</td>
+            <td scope="col"><code>{{value}}</code></td>
+            <td scope="col"><code>{{status_key}}</code></td>
+        </tr>
+        {{/status}}
+    </tbody>
+</table>

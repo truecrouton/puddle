@@ -1,0 +1,67 @@
+{{#automations}}
+{{#kind_is_if}}
+<div class="card mb-3">
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">if (</a>
+            {{> conditions}}
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">) {</a>
+        </h5>
+    </div>
+    <ul class="list-group list-group-flush font-monospace">
+        {{#steps}}
+        {{> conditional_steps}}
+        {{/steps}}
+        <li class="list-group-item">
+            <a class="fs-4" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalConditionalStep" data-automation-step-id="{{step_id}}"><i class="bi bi-plus-circle-fill"></i></a>
+        </li>
+    </ul>
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">} else {</a>
+        </h5>
+    </div>
+    <ul class="list-group list-group-flush font-monospace">
+        {{#steps}}
+        {{> else_steps}}
+        {{/steps}}
+        <li class="list-group-item">
+            <a class="fs-4" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalConditionalStep" data-is-else-step="1" data-automation-step-id="{{step_id}}"><i class="bi bi-plus-circle-fill"></i></a>
+        </li>
+    </ul>
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">}</a>
+        </h5>
+    </div>
+</div>
+{{/kind_is_if}}
+{{#kind_is_publish}}
+<div class="card mb-3">
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">publish ({{topic}} {{message}})</a>
+        </h5>
+    </div>
+</div>
+{{/kind_is_publish}}
+{{#kind_is_notify}}
+<div class="card mb-3">
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">notify ()</a>
+        </h5>
+    </div>
+</div>
+{{/kind_is_notify}}
+{{#kind_is_wait}}
+<div class="card mb-3">
+    <div class="card-body pb-0">
+        <h5 class="card-title font-monospace pb-2">
+            <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalAutomationStep" data-automation-step-id="{{step_id}}">wait ()</a>
+        </h5>
+    </div>
+</div>
+{{/kind_is_wait}}
+{{/automations}}
+<a class="fs-4" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalAutomationStep"><i class="bi bi-plus-circle-fill"></i></a>

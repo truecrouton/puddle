@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/schedule.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <include src="./elements/navbar.html"></include>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">
+            <a class="text-decoration-none" href="./"><i class="bi bi-arrow-up-circle"></i></a>
+            Today's scheduled automations
+        </h1>
+        <p class="col-12 fs-4">
+            Change the schedule under automations.
+        </p>
+    </div>
+
+    <div class="container" id="divSchedule"></div>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>

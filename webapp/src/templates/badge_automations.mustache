@@ -1,0 +1,10 @@
+<h3>
+    <span class="badge rounded-pill text-bg-primary mb-2">
+        <a href="./automation.html" class="text-decoration-none text-light"><i class="bi bi-plus-lg"></i></a>
+    </span>
+    {{#automations}}
+    <span class="badge rounded-pill text-bg-warning mb-2">
+        <a href="./automation.html?automation_id={{automation_id}}" class="text-decoration-none text-dark"><i class="bi bi-{{#kindIcon}}{{trigger}}{{/kindIcon}}"></i> {{name}}</a>
+    </span>
+    {{/automations}}
+</h3>

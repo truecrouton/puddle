@@ -1,0 +1,9 @@
+{{#is_else_step}}
+<li class="list-group-item">
+    <a href="javascript:void(0);" class="text-decoration-none pdl-color-code" data-bs-toggle="modal" data-bs-target="#modalConditionalStep" data-conditional-step-id="{{step_id}}" data-is-else-step="1">
+        {{#kind_is_publish}}publish ({{topic}} {{message}}){{/kind_is_publish}}
+        {{#kind_is_notify}}notify (){{/kind_is_notify}}
+        {{#kind_is_wait}}wait (){{/kind_is_wait}}
+    </a>
+</li>
+{{/is_else_step}}

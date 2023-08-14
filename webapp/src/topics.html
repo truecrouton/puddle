@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/topics.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <include src="./elements/navbar.html"></include>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">
+            <a class="text-decoration-none" href="/"><i class="bi bi-arrow-up-circle"></i></a>
+            Peruse your mqtt topics
+        </h1>
+        <p class="col-12 fs-4">
+            These are the topics read from your mqtt message broker.
+            <a class="text-decoration-none" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#modalTopic" data-topic-id="0"><i class="bi bi-plus-circle"></i></a>
+        </p>
+    </div>
+
+    <div class="container" id="divTopics"></div>
+
+    <div class="modal fade" id="modalTopic" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formTopic">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Topic Information</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="inputTopic" class="form-label">Topic</label>
+                                <input type="text" class="form-control" minlength="1" maxlength="100" id="inputTopic" required>
+                            </div>
+                            <div class="col-12 d-none" id="divStatus"></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" id="buttonTopicSave">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>

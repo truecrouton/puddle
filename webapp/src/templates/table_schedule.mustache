@@ -1,0 +1,26 @@
+<table class="table px-0">
+    <thead>
+        <tr>
+            <th scope="col" width="15%">Name</th>
+            <th scope="col" width="10%">Runs At</th>
+            <th scope="col" width="75%">Automations</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#schedule}}
+        <tr>
+            <th scope="row">{{name}}</th>
+            <td>{{runs_at}}</td>
+            <td>
+                <h5 class="mb-0">
+                    {{#automations}}
+                    <span class="badge rounded-pill text-bg-warning mb-2">
+                        <a href="./automation.html?automation_id={{automation_id}}" class="text-decoration-none text-dark"><i class="bi bi-{{#kindIcon}}{{trigger}}{{/kindIcon}}"></i> {{name}}</a>
+                    </span>
+                    {{/automations}}
+                </h5>
+            </td>
+        </tr>
+        {{/schedule}}
+    </tbody>
+</table>

@@ -1,0 +1,10 @@
+<h3>
+    <span class="badge rounded-pill text-bg-primary mb-2">
+        <a href="javascript:void(0);" class="text-decoration-none text-light" data-bs-toggle="modal" data-bs-target="#modalSettings" data-device-id="0"><i class="bi bi-plus-lg"></i></a>
+    </span>
+    {{#devices}}
+    <span class="badge rounded-pill text-bg-warning mb-2">
+        <a href="javascript:void(0);" class="text-decoration-none text-dark" data-bs-toggle="modal" data-bs-target="#modalSettings" data-device-id="{{device_id}}"><i class="bi bi-{{#kindIcon}}{{kind}}{{/kindIcon}}"></i> {{name}}</a>
+    </span>
+    {{/devices}}
+</h3>

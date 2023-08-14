@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en" class="h-100">
+
+<head>
+    <include src="./elements/head.html" locals='{
+        "module": "./ts/charts.ts"
+    }'></include>
+</head>
+
+<body class="d-flex flex-column h-100">
+    <include src="./elements/navbar.html"></include>
+
+    <div class="container pt-4">
+        <h1 class="display-5 fw-bold">
+            <a class="text-decoration-none" href="/"><i class="bi bi-arrow-up-circle"></i></a>
+            Review mqtt topic states
+        </h1>
+        <p class="col-12 fs-4">
+            Select a topic and a key to chart.
+            <a class="text-decoration-none" href="javascript:void(0);"><i class="bi bi-gear"></i></a>
+        </p>
+    </div>
+
+    <div class="container mb-4">
+        <div class="alert alert-danger fd-error-page d-none" role="alert"></div>
+        <form class="row g-3" id="formFields">
+            <div class="col-md-5">
+                <label for="selectTopic" class="form-label">Topic</label>
+                <select id="selectTopic" class="form-select">
+                    <option value="" selected>Select Topic</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="selectKey" class="form-label">Key</label>
+                <select id="selectKey" class="form-select">
+                    <option value="" selected>Select Key</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <label for="inputGroupDateRange" class="form-label">Range</label>
+                    <div class="form-check form-check-inline ms-auto">
+                        <input class="form-check-input" type="radio" name="radioHoursRange" id="radioHoursAll" value="all" checked>
+                        <label class="form-check-label" for="radioHoursAll">All</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="radioHoursRange" id="radioHoursPeriod1" value="0">
+                        <label class="form-check-label" for="radioHoursPeriod1">0-12</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="radioHoursRange" id="radioHoursPeriod2" value="12">
+                        <label class="form-check-label" for="radioHoursPeriod2">12-24</label>
+                    </div>
+                </div>
+                <div class="input-group mb-3" id="inputGroupDateRange">
+                    <input type="text" class="form-control" name="start" id="inputStartDate">
+                    <span class="input-group-text">to</span>
+                    <input type="text" class="form-control" name="end" id="inputEndDate">
+                </div>
+
+            </div>
+        </form>
+    </div>
+
+    <div class="container">
+        <canvas class="d-none pb-5" id="canvasChart"></canvas>
+        <div id="divCharts"></div>
+    </div>
+
+    <div class="modal fade" id="modalSettings" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formSettings">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Chart Settings</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-md-9">
+                                <label for="inputSettingsName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="inputSettingsName" minlength="1" maxlength="100" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="selectSettingsFavorite" class="form-label">Favorite</label>
+                                <select id="selectSettingsFavorite" class="form-select" required>
+                                    <option value="0" selected>No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="selectSettingsTopic" class="form-label">Topic</label>
+                                <select id="selectSettingsTopic" class="form-select" required>
+                                    <option value="0" selected>Select Topic</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="inputSettingsKey" class="form-label">Key</label>
+                                <input type="text" class="form-control" id="inputSettingsKey">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger me-auto" id="buttonChartDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <include src="./elements/footer.html"></include>
+</body>
+
+</html>
