@@ -133,6 +133,7 @@ exports.up = function (knex) {
       }
       return newRows;
     }).then((rows) => {
+      if (!rows.length) return;
       return knex(tableName).insert(rows);
     });
 };
