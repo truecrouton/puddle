@@ -84,7 +84,7 @@ experiment('store and get mqtt messages', () => {
         const pairs = result.pairs;
         expect(pairs.length).to.be.equal(3);
 
-        const keys = pairs.map((p) => p.value);
+        const keys = pairs.map((p: any) => p.value);
         expect(keys).to.equal([36, 36, 37]);
     });
 
@@ -101,5 +101,12 @@ experiment('store and get mqtt messages', () => {
         expect(result).to.be.object();
         expect(result.topics).to.be.array();
         expect(Number(result.topics.length)).to.be.greaterThan(0);
+    });
+
+    test('storing a mqtt message with invalid json', async () => {
+        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topicId = storeMessage(topic, 'this_is_not_json');
+
+        expect(topicId).to.equal(0);
     });
 });

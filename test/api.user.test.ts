@@ -5,7 +5,7 @@ import { expect } from '@hapi/code';
 import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
-import { randAccessory, randFullName, randUserName, randVerb, randWord } from '@ngneat/falso';
+import { randNumber, randFullName, randUserName, randVerb, randWord } from '@ngneat/falso';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, it, test } = lab;
@@ -31,7 +31,7 @@ experiment('setup users', () => {
             username: randUserName(),
             password: 'Passw0rd!',
             is_admin: true,
-            auth_phrase: 'changethislater',
+            auth_phrase: 'change_this_before_use',
             name: randFullName()
         };
 
@@ -76,7 +76,7 @@ experiment('setup users', () => {
     });
 
     test('update a password', async () => {
-        const authPhrase = 'changethislater';
+        const authPhrase = 'change_this_before_use';
         const user = {
             username: randUserName(),
             password: 'Passw0rd!',

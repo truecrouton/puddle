@@ -1,5 +1,5 @@
-export interface Automation {
-    step_id: number;
+export interface Expression {
+    expression_id: number;
     kind: "if" | "notify" | "publish" | "wait";
     kind_is_if?: boolean;
     kind_is_notify?: boolean;
@@ -9,183 +9,121 @@ export interface Automation {
     topic_id?: number;
     topic?: string;
     message?: string;
-    conditions?: Condition[];
-    steps?: Automation[];
+    expression?: string;
+    nested_expressions?: Expression[];
 }
 
 export type ConditionOperandKind = "preset" | "topic" | "value";
-export type ConditionPreset = "date" | "time" | "month" | "day" | "season_northern" | "season_southern" | "sun_position";
-export interface Condition {
-    condition_id?: number;
-    kind: "and" | "eq" | "or" | "gt" | "gte" | "lt" | "lte" | "neq";
-    left_operand_kind: ConditionOperandKind;
-    left_preset?: ConditionPreset;
-    left_topic_id?: number;
-    left_topic_key?: string;
-    left_value?: string;
-    right_operand_kind: ConditionOperandKind;
-    right_preset?: ConditionPreset;
-    right_topic_id?: number;
-    right_topic_key?: string;
-    right_value?: string;
-}
 
-const automations: Automation[] = [];
+const expressions: Expression[] = [];
 
-export function deleteAutomationStep(automationStepId: number) {
-    const index = automations.findIndex((a) => a.step_id === automationStepId);
+export function deleteExpression(expressionId: number) {
+    const index = expressions.findIndex((a) => a.expression_id === expressionId);
     if (index > -1) {
-        automations.splice(index, 1);
+        expressions.splice(index, 1);
     }
 }
 
-export function deleteConditionalStep(conditionalStepId: number) {
-    for (const automation of automations) {
-        let index = automation.steps?.findIndex((s) => s.step_id === conditionalStepId);
+export function deleteConditional(conditionalId: number) {
+    for (const automation of expressions) {
+        let index = automation.nested_expressions?.findIndex((s) => s.expression_id === conditionalId);
         if (index > -1) {
-            automation.steps.splice(index, 1);
+            automation.nested_expressions.splice(index, 1);
             break;
         }
     }
 }
 
-export function deleteCondition(conditionId: number) {
-    for (const automation of automations) {
-        let index = automation.conditions?.findIndex((c) => c.condition_id === conditionId);
-        if (index > -1) {
-            automation.conditions.splice(index, 1);
-            break;
-        }
-    }
-}
+export function getExpressions(savable: boolean = false) {
+    if (!savable) return expressions;
 
-export function getAutomations(savable: boolean = false) {
-    if (!savable) return automations;
+    const keysToSave = ["kind", "topic_id", "message", "nested_expressions", "expression", "is_else_step"];
+    const valuesToDelete = [undefined, null];
 
-    const stepKeys = ["kind", "topic_id", "message", "conditions", "steps", "is_else_step"];
-    const conditionKeys = ["kind", "left_operand_kind", "left_preset", "left_topic_id", "left_topic_key", "left_value", "right_operand_kind", "right_preset", "right_topic_id", "right_topic_key", "right_value"];
+    const allExprs = Object.assign([], expressions);
+    const exprs = allExprs.map((e) => {
+        const expression = Object.assign({}, e);
 
-    const allSteps = Object.assign([], automations);
-    return allSteps.map((a) => {
-        const automation = Object.assign({}, a);
-        Object.keys(automation).forEach((key) => {
-            if (!stepKeys.includes(key)) delete automation[key];
+        Object.keys(expression).forEach((key) => {
+            if (!keysToSave.includes(key)) delete expression[key];
+            if (valuesToDelete.includes(expression[key])) delete expression[key];
         });
 
         return {
-            ...automation,
-            conditions: automation.conditions.map((c) => {
-                const condition = Object.assign({}, c);
-                Object.keys(condition).forEach((key) => {
-                    if (!conditionKeys.includes(key)) delete condition[key];
+            ...expression,
+            topic_id: expression.topic_id || 0,
+            nested_expressions: expression.nested_expressions.map((e) => {
+                const nexpr = Object.assign({}, e);
+                Object.keys(nexpr).forEach((key) => {
+                    if (!keysToSave.includes(key)) delete nexpr[key];
+                    if (!nexpr[key]) delete nexpr[key];
                 });
-                return condition;
-            }),
-            steps: automation.steps.map((s) => {
-                const step = Object.assign({}, s);
-                Object.keys(step).forEach((key) => {
-                    if (!stepKeys.includes(key)) delete step[key];
-                });
-                return step;
+                return nexpr;
             })
         };
     });
+
+    return exprs;
 }
 
-export function getAutomationStep(automationStepId: number) {
-    return automations.find((a) => a.step_id === automationStepId);
+export function getExpression(expressionId: number) {
+    return expressions.find((a) => a.expression_id === expressionId);
 }
 
-export function getCondition(conditionId: number) {
-    let condition: Condition;
+export function getConditional(conditionalId: number) {
+    let conditional: Expression;
 
-    for (const automation of automations) {
-        condition = automation.conditions?.find((c) => c.condition_id === conditionId);
-        if (condition) break;
-    }
-
-    return condition;
-}
-
-export function getConditionalStep(conditionalStepId: number) {
-    let conditional: Automation;
-
-    for (const automation of automations) {
-        conditional = automation.steps?.find((s) => s.step_id === conditionalStepId);
+    for (const automation of expressions) {
+        conditional = automation.nested_expressions?.find((s) => s.expression_id === conditionalId);
         if (conditional) break;
     }
 
     return conditional;
 }
 
-function nextAutomationStepId(): number {
-    return Math.max(0, ...automations.map((a) => a.step_id)) + 1;
+function nextExpressionId(): number {
+    return Math.max(0, ...expressions.map((e) => e.expression_id)) + 1;
 }
 
-function nextConditionId(): number {
+function nextConditionalId(): number {
     const ids: number[] = [];
-    for (const automation of automations) {
-        if (automation.conditions) {
-            ids.push(...automation.conditions.map((c) => c.condition_id));
+    for (const expr of expressions) {
+        if (expr.nested_expressions) {
+            ids.push(...expr.nested_expressions.map((ne) => ne.expression_id));
         }
     }
     return Math.max(0, ...ids) + 1;
 }
 
-function nextConditionalStepId(): number {
-    const ids: number[] = [];
-    for (const automation of automations) {
-        if (automation.steps) {
-            ids.push(...automation.steps.map((s) => s.step_id));
-        }
-    }
-    return Math.max(0, ...ids) + 1;
-}
+export function upsertExpression(expression: Expression) {
+    const stepIndex = expressions.findIndex((a) => a.expression_id === expression.expression_id);
 
-export function upsertCondition(automationId: number, condition: Condition) {
-    const automation = automations.find((a) => a.step_id === automationId);
-    if (!automation) return;
-
-    if (condition.condition_id > 0) {
-        const conditionIndex = automation.conditions?.findIndex((c) => c.condition_id === condition.condition_id);
-        if (conditionIndex > -1) {
-            automation.conditions[conditionIndex] = condition;
-        }
+    if (expression.expression_id > 0 && stepIndex > -1) {
+        expressions[stepIndex] = expression;
     }
     else {
-        automation.conditions.push({ ...condition, condition_id: nextConditionId() });
-    }
-}
-
-export function upsertAutomationStep(automation: Automation) {
-    const stepIndex = automations.findIndex((a) => a.step_id === automation.step_id);
-
-    if (automation.step_id > 0 && stepIndex > -1) {
-        automations[stepIndex] = automation;
-    }
-    else {
-        automations.push(<Automation>{
-            ...automation,
-            steps: automation.steps ?? [],
+        expressions.push(<Expression>{
+            ...expression,
+            expression_id: nextExpressionId(),
+            expression: expression.expression,
+            nested_expressions: expression.nested_expressions ?? [],
             else_steps: [],
-            conditions: automation.conditions ?? [],
-            step_id: nextAutomationStepId()
         });
     }
 }
 
-export function upsertConditionalStep(automationId: number, step: Partial<Automation>) {
-    if (automationId > 0) {
-        const automation = automations.find((a) => a.step_id === automationId);
+export function upsertConditional(expressionId: number, conditional: Partial<Expression>) {
+    if (expressionId > 0) {
+        const automation = expressions.find((a) => a.expression_id === expressionId);
         if (!automation) return;
 
-        automation.steps.push(<Automation>{ ...step, step_id: nextConditionalStepId() });
+        automation.nested_expressions.push(<Expression>{ ...conditional, expression_id: nextConditionalId() });
     }
-    else if (step.step_id > 0) {
-        for (const automation of automations) {
-            let index = automation.steps?.findIndex((s) => s.step_id === step.step_id);
+    else if (conditional.expression_id > 0) {
+        for (const automation of expressions) {
+            let index = automation.nested_expressions?.findIndex((s) => s.expression_id === conditional.expression_id);
             if (index > -1) {
-                automation.steps[index] = <Automation>step;
+                automation.nested_expressions[index] = <Expression>conditional;
                 break;
             }
         }

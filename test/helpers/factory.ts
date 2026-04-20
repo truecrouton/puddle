@@ -1,6 +1,6 @@
 import { expect } from "@hapi/code";
 import { Server } from '@hapi/hapi';
-import { randAccessory, randVerb, randWord } from '@ngneat/falso';
+import { randAbbreviation, randAccessory, randVerb, randWord } from '@ngneat/falso';
 
 let server: Server;
 
@@ -10,7 +10,7 @@ export function factoryInit(withServer: Server) {
 
 export async function automationCreate(params: {}): Promise<number> {
     const automationReq = {
-        automation_id: 0,
+        id: 0,
         name: `${randVerb()} ${randAccessory()}`,
         ...params
     };
@@ -61,4 +61,8 @@ export async function deviceCreate(params: {}): Promise<number> {
     expect(Number(result.device_id)).to.be.greaterThan(0);
 
     return result.device_id;
+}
+
+export function topicGenerate(baseTopic: string = 'zigbee2mqtt'): string {
+    return `${baseTopic.length ? baseTopic + '/' : ''}${randWord().toLowerCase()}_${randAbbreviation().toLowerCase()}`;
 }

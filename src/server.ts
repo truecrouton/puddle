@@ -1,4 +1,6 @@
-import Hapi from "@hapi/hapi";
+import * as Hapi from '@hapi/hapi';
+import * as Inert from '@hapi/inert';
+import * as Cookie from '@hapi/cookie';
 import { Request, Server } from "@hapi/hapi";
 import { routes } from './routes';
 import { validateSession } from "./storage";
@@ -12,8 +14,8 @@ export const init = async function (): Promise<Server> {
     });
 
     await server.register([
-        require('@hapi/inert'),
-        require('@hapi/cookie')
+        Inert,
+        Cookie
     ]);
 
     server.auth.strategy('session', 'cookie', {

@@ -21,7 +21,7 @@
         </p>
     </div>
 
-    <div class="container" id="divSteps"></div>
+    <div class="container" id="divAutomation"></div>
 
     <div class="modal fade" id="modalCondition" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -240,23 +240,23 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalAutomationStep" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal fade" id="modalExpression" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form id="formAutomationStep">
+                <form id="formExpression">
                     <div class="modal-header">
                         <div class="spinner-border text-primary me-2 d-none" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <h5 class="modal-title">Automation Step</h5>
+                        <h5 class="modal-title">Expression Step</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
                         <div class="row g-3">
                             <div class="col-12">
-                                <label for="selectAutomationStepKind" class="form-label">Type</label>
-                                <select id="selectAutomationStepKind" class="form-select">
+                                <label for="selectExpressionKind" class="form-label">Type</label>
+                                <select id="selectExpressionKind" class="form-select">
                                     <option value="" selected>Select Type</option>
                                     <option value="if">If/Else</option>
                                     <option value="notify">Notify</option>
@@ -264,22 +264,28 @@
                                     <option value="wait">Wait</option>
                                 </select>
                             </div>
-                            <div class="col-12 row g-3 m-0 p-0" id="divAutomationPublish">
+                            <div class="col-12 row g-3 m-0 p-0" id="divExpressionIf">
                                 <div class="col-12">
-                                    <label for="selectAutomationStepTopic" class="form-label">Trigger Topic</label>
-                                    <select id="selectAutomationStepTopic" class="form-select">
+                                    <label for="inputExpressionIf" class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="inputExpressionIf">
+                                </div>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divExpressionPublish">
+                                <div class="col-12">
+                                    <label for="selectExpressionTopic" class="form-label">Trigger Topic</label>
+                                    <select id="selectExpressionTopic" class="form-select">
                                         <option value="" selected>Select Topic</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label for="inputAutomationStepMessage" class="form-label">Message</label>
-                                    <input type="text" class="form-control" id="inputAutomationStepMessage">
+                                    <label for="inputExpressionMessage" class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="inputExpressionMessage">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger me-auto" id="buttonAutomationStepDelete">Delete</button>
+                        <button type="button" class="btn btn-danger me-auto" id="buttonExpressionDelete">Delete</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>
@@ -288,10 +294,10 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalConditionalStep" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal fade" id="modalConditional" data-bs-backdrop="static" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <form id="formConditionalStep">
+                <form id="formConditional">
                     <div class="modal-header">
                         <div class="spinner-border text-primary me-2 d-none" role="status">
                             <span class="visually-hidden">Loading...</span>
@@ -303,8 +309,8 @@
                         <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
                         <div class="row g-3">
                             <div class="col-12">
-                                <label for="selectConditionalStepKind" class="form-label">Type</label>
-                                <select id="selectConditionalStepKind" class="form-select">
+                                <label for="selectConditionalKind" class="form-label">Type</label>
+                                <select id="selectConditionalKind" class="form-select">
                                     <option value="" selected>Select Type</option>
                                     <option value="notify">Notify</option>
                                     <option value="publish">Publish</option>
@@ -313,20 +319,49 @@
                             </div>
                             <div class="col-12 row g-3 m-0 p-0" id="divConditionalPublish">
                                 <div class="col-12">
-                                    <label for="selectConditionalStepTopic" class="form-label">Trigger Topic</label>
-                                    <select id="selectConditionalStepTopic" class="form-select">
+                                    <label for="selectConditionalTopic" class="form-label">Trigger Topic</label>
+                                    <select id="selectConditionalTopic" class="form-select">
                                         <option value="" selected>Select Topic</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label for="inputConditionalStepMessage" class="form-label">Message</label>
-                                    <input type="text" class="form-control" id="inputConditionalStepMessage">
+                                    <label for="inputConditionalMessage" class="form-label">Message</label>
+                                    <input type="text" class="form-control" id="inputConditionalMessage">
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-danger me-auto" id="buttonConditionalStepDelete">Delete</button>
+                        <button type="button" class="btn btn-danger me-auto" id="buttonConditionalDelete">Delete</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExpressionEdit" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="formExpressionEdit">
+                    <div class="modal-header">
+                        <div class="spinner-border text-primary me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h5 class="modal-title">Edit Expression</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="inputExpression" class="form-label">Message</label>
+                                <input type="text" class="form-control" id="inputExpression">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save</button>
                     </div>

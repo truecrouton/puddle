@@ -6,6 +6,7 @@ import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
 import { randAccessory, randVerb, randWord } from '@ngneat/falso';
+import { topicGenerate } from './helpers/factory';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, it, test } = lab;
@@ -27,7 +28,7 @@ experiment('setup and control devices', () => {
     });
 
     test('setup and update a toggleable device', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
 
         const device = {
@@ -81,9 +82,9 @@ experiment('setup and control devices', () => {
         expect(getResult.status).to.be.array();
         expect(Number(getResult.status.length)).to.be.greaterThan(0);
 
-        const linkQuality = getResult.status.find((s) => s.status_key === 'linkquality');
-        const stateTop = getResult.status.find((s) => s.status_key === 'state_top');
-        const stateBottom = getResult.status.find((s) => s.status_key === 'state_bottom');
+        const linkQuality = getResult.status.find((s: any) => s.status_key === 'linkquality');
+        const stateTop = getResult.status.find((s: any) => s.status_key === 'state_top');
+        const stateBottom = getResult.status.find((s: any) => s.status_key === 'state_bottom');
         expect(linkQuality.value).to.equal(156);
         expect(stateTop.value).to.equal("OFF");
         expect(stateBottom.value).to.equal("OFF");
@@ -133,7 +134,7 @@ experiment('setup and control devices', () => {
     });
 
     test('setup a positionable device', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, '{"linkquality":76,"position":"55","update":{"state":"available"}}');
 
         const device = {
@@ -187,6 +188,24 @@ experiment('setup and control devices', () => {
         expect(getResult.value_off).to.be.equal(device.value_off);
     });
 
+    test('getting all controls', async () => {
+        const res = await server.inject({
+            method: 'post',
+            url: '/api/controls/get',
+            payload: {},
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(res.statusCode).to.equal(200);
+
+        const { result }: { result: any; } = res;
+        expect(result).to.be.object();
+        expect(result.controls).to.be.array();
+        expect(Array(result.devices).length).to.be.greaterThan(0);
+    });
+
     test('getting all devices', async () => {
         const res = await server.inject({
             method: 'post',
@@ -206,7 +225,7 @@ experiment('setup and control devices', () => {
     });
 
     test('setting a device', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
 
         const device = {

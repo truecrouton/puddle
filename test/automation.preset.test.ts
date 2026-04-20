@@ -6,9 +6,9 @@ import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
 import { runAutomation } from "../src/automation";
-import { randAccessory, randVerb } from '@ngneat/falso';
-import { automationCreate, factoryInit } from './helpers/factory';
+import { automationCreate, factoryInit, topicGenerate } from './helpers/factory';
 import { format, subSeconds } from 'date-fns';
+import { AutomationExpressionSetupPayloadInterface } from '../src/routes/interfaces';
 
 const lab = Lab.script();
 const { afterEach, beforeEach, before, experiment, test } = lab;
@@ -18,6 +18,7 @@ experiment('run automations with preset conditions', () => {
     let server: Server;
 
     before((async () => {
+        process.env.BASE_TOPIC = 'zigbee2mqtt';
         storageInit({ fileMustExist: true });
     }));
 
@@ -31,28 +32,22 @@ experiment('run automations with preset conditions', () => {
     });
 
     test('generate accurate preset values', async () => {
-        const topic = `zigbee2mqtt/${randAccessory().toLowerCase().replace(' ', '_')}`;
+        const topic = topicGenerate('');
         const message = '{"state":"ON"}';
         const today = new Date();
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"OFF","state_top":"OFF"}');
+        const topicId = storeMessage(`zigbee2mqtt/${topic}`, '{"linkquality":100,"state_bottom":"OFF","state_top":"OFF"}');
 
         const automationId = await automationCreate({
             trigger: 'time',
             trigger_at: '12:00'
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'preset',
-                    left_preset: 'date',
-                    right_operand_kind: 'value',
-                    right_value: format(today, 'yyyy-MM-dd')
-                }],
-                steps: [{
+                expression: `date == "${format(today, 'yyyy-MM-dd')}"`,
+                nested_expressions: [{
                     kind: 'notify'
                 },
                 {
@@ -64,22 +59,16 @@ experiment('run automations with preset conditions', () => {
             },
             {
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'preset',
-                    left_preset: 'month',
-                    right_operand_kind: 'value',
-                    right_value: format(today, 'L')
-                }],
-                steps: [{
+                expression: `month == ${format(today, 'L')}`,
+                nested_expressions: [{
                     kind: 'notify'
                 }]
             }]
         };
         const res = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -97,52 +86,37 @@ experiment('run automations with preset conditions', () => {
 
         const executableStep1 = runRes[0];
         expect(executableStep1.kind).to.equal('notify');
-        expect(executableStep1.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep1.conditional_expression_id as number).to.be.greaterThan(0);
 
         const executableStep2 = runRes[1];
         expect(executableStep2.kind).to.equal('notify');
-        expect(executableStep2.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep2.conditional_expression_id as number).to.be.greaterThan(0);
     });
 
     test('detect increasing and decreasing values', async () => {
-        const topicDec = `zigbee2mqtt/${randAccessory().toLowerCase().replace(' ', '_')}`;
-        const topicInc = `zigbee2mqtt/${randAccessory().toLowerCase().replace(' ', '_')}`;
+        const topicDec = topicGenerate('');
+        const topicInc = topicGenerate('');
         const message = '{"state":"ON"}';
 
         const now = new Date();
         const start = subSeconds(now, 1);
 
-        const decTopicId = storeMessage(topicDec, JSON.stringify({ linkquality: 100, illuminance: 66 }), start);
-        const incTopicId = storeMessage(topicInc, JSON.stringify({ linkquality: 100, illuminance: 66 }), start);
-        storeMessage(topicDec, JSON.stringify({ linkquality: 100, illuminance: 33 }), now);
-        storeMessage(topicInc, JSON.stringify({ linkquality: 100, illuminance: 88 }), now);
+        const decTopicId = storeMessage(`zigbee2mqtt/${topicDec}`, JSON.stringify({ linkquality: 100, illuminance: 66 }), start);
+        const incTopicId = storeMessage(`zigbee2mqtt/${topicInc}`, JSON.stringify({ linkquality: 100, illuminance: 66 }), start);
+        storeMessage(`zigbee2mqtt/${topicDec}`, JSON.stringify({ linkquality: 100, illuminance: 33 }), now);
+        storeMessage(`zigbee2mqtt/${topicInc}`, JSON.stringify({ linkquality: 100, illuminance: 88 }), now);
 
         const automationId = await automationCreate({
             trigger: 'time',
             trigger_at: '12:00'
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'inc',
-                    left_operand_kind: 'topic',
-                    left_topic_id: incTopicId,
-                    left_topic_key: 'illuminance',
-                    right_operand_kind: 'value',
-                    right_value: 77
-                },
-                {
-                    kind: 'dec',
-                    left_operand_kind: 'topic',
-                    left_topic_id: decTopicId,
-                    left_topic_key: 'illuminance',
-                    right_operand_kind: 'value',
-                    right_value: 55
-                }],
-                steps: [{
+                expression: `${topicInc}.illuminance >> 77 AND ${topicDec}.illuminance << 55`,
+                nested_expressions: [{
                     kind: 'notify'
                 },
                 {
@@ -154,15 +128,8 @@ experiment('run automations with preset conditions', () => {
             },
             {
                 kind: 'if',
-                conditions: [{
-                    kind: 'dec',
-                    left_operand_kind: 'topic',
-                    left_topic_id: incTopicId,
-                    left_topic_key: 'illuminance',
-                    right_operand_kind: 'value',
-                    right_value: 22
-                }],
-                steps: [{
+                expression: `${topicInc}.illuminance << 22`,
+                nested_expressions: [{
                     kind: 'notify'
                 },
                 {
@@ -175,8 +142,8 @@ experiment('run automations with preset conditions', () => {
         };
         const res = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -194,52 +161,37 @@ experiment('run automations with preset conditions', () => {
 
         const executableStep1 = runRes[0];
         expect(executableStep1.kind).to.equal('notify');
-        expect(executableStep1.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep1.conditional_expression_id as number).to.be.greaterThan(0);
 
         const executableStep2 = runRes[1];
         expect(executableStep2.kind).to.equal('publish');
-        expect(executableStep2.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep2.conditional_expression_id as number).to.be.greaterThan(0);
     });
 
     test('detect last values', async () => {
-        const topic1 = `zigbee2mqtt/${randAccessory().toLowerCase().replace(' ', '_')}`;
-        const topic2 = `zigbee2mqtt/${randAccessory().toLowerCase().replace(' ', '_')}`;
+        const topic1 = topicGenerate('');
+        const topic2 = topicGenerate('');
         const message = '{"state":"ON"}';
 
         const now = new Date();
         const start = subSeconds(now, 60);
 
-        const topicId1 = storeMessage(topic1, JSON.stringify({ linkquality: 100, occupancy: 0 }), start);
-        const topicId2 = storeMessage(topic2, JSON.stringify({ linkquality: 100, occupancy: 1 }), start);
-        storeMessage(topic1, JSON.stringify({ linkquality: 100, occupancy: 1 }), now);
-        storeMessage(topic2, JSON.stringify({ linkquality: 100, occupancy: 0 }), now);
+        const topicId1 = storeMessage(`zigbee2mqtt/${topic1}`, JSON.stringify({ linkquality: 100, occupancy: 0 }), start);
+        const topicId2 = storeMessage(`zigbee2mqtt/${topic2}`, JSON.stringify({ linkquality: 100, occupancy: 1 }), start);
+        storeMessage(`zigbee2mqtt/${topic1}`, JSON.stringify({ linkquality: 100, occupancy: 1 }), now);
+        storeMessage(`zigbee2mqtt/${topic2}`, JSON.stringify({ linkquality: 100, occupancy: 0 }), now);
 
         const automationId = await automationCreate({
             trigger: 'time',
             trigger_at: '12:00'
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'lgt',
-                    left_operand_kind: 'topic',
-                    left_topic_id: topicId2,
-                    left_topic_key: 'occupancy',
-                    right_operand_kind: 'value',
-                    right_value: '0 , >30'
-                },
-                {
-                    kind: 'leq',
-                    left_operand_kind: 'topic',
-                    left_topic_id: topicId2,
-                    left_topic_key: 'occupancy',
-                    right_operand_kind: 'value',
-                    right_value: '0,<1'
-                }],
-                steps: [{
+                expression: `${topic2}.occupancy _>[>30] 0 AND ${topic2}.occupancy _=[<1] 0`,
+                nested_expressions: [{
                     kind: 'notify'
                 },
                 {
@@ -251,15 +203,8 @@ experiment('run automations with preset conditions', () => {
             },
             {
                 kind: 'if',
-                conditions: [{
-                    kind: 'llt',
-                    left_operand_kind: 'topic',
-                    left_topic_id: topicId1,
-                    left_topic_key: 'occupancy',
-                    right_operand_kind: 'value',
-                    right_value: '1,>30'
-                }],
-                steps: [{
+                expression: `${topic1}.occupancy _<[>30] 1`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId1,
                     message
@@ -272,8 +217,8 @@ experiment('run automations with preset conditions', () => {
         };
         const res = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -291,10 +236,10 @@ experiment('run automations with preset conditions', () => {
 
         const executableStep1 = runRes[0];
         expect(executableStep1.kind).to.equal('notify');
-        expect(executableStep1.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep1.conditional_expression_id as number).to.be.greaterThan(0);
 
         const executableStep2 = runRes[1];
         expect(executableStep2.kind).to.equal('publish');
-        expect(executableStep2.conditional_step_id).to.be.greaterThan(0);
+        expect(executableStep2.conditional_expression_id as number).to.be.greaterThan(0);
     });
 });

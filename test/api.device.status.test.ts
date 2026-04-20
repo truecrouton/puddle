@@ -5,8 +5,8 @@ import { expect } from '@hapi/code';
 import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
-import { deviceCreate, factoryInit } from './helpers/factory';
-import { randLastName, randWord } from '@ngneat/falso';
+import { deviceCreate, factoryInit, topicGenerate } from './helpers/factory';
+import { randAbbreviation, randLastName, randWord } from '@ngneat/falso';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, it, test } = lab;
@@ -29,7 +29,7 @@ experiment('setup devices', () => {
     });
 
     test('setup device status', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
 
         const deviceId = await deviceCreate({

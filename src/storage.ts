@@ -1,5 +1,6 @@
 import BetterSqllite3 from 'better-sqlite3';
 import { addMinutes, format } from 'date-fns';
+import { LRUCache } from 'lru-cache';
 
 export interface Automation {
     id: number,
@@ -23,8 +24,6 @@ export interface AutomationStep {
     topic_id: number,
     message: string;
 }
-
-export interface AutomationSteps { automation_id: number, result: AutomationStep[]; }
 
 export interface Chart {
     chart_id: number;
@@ -58,7 +57,6 @@ export interface Pair {
     name: string,
     value: string | number,
     is_object: boolean,
-    is_latest: boolean;
 }
 
 export interface Topic {
@@ -75,7 +73,50 @@ export interface User {
 }
 
 export let db: BetterSqllite3.Database;
+let lruCache = new LRUCache<string, number | string | string[]>({ max: 100000 });
 let lastMessages: Map<string, { jsonString: string, count: number, created: string; }> = new Map();
+
+export function cacheGet(topicId: number | bigint, name: string): string | number {
+    return <string | number>lruCache.get(`${topicId}-${name}`);
+}
+
+export function cacheInit() {
+    console.log('Loading cache with previously stored pairs');
+    const latestPairStmt = db.prepare('SELECT MAX(created_at) FROM pairs WHERE topic_id=? AND is_object=0');
+    const pairsStmt = db.prepare('SELECT id as topic_id, name, value, created_at FROM pairs where topic_id=? AND created_at=? AND is_object=0 AND pair_id=0');
+
+    const topics = <Topic[]>db.prepare('SELECT id as topic_id, topic from topics').all();
+    for (const topic of topics) {
+        const latestTimestamp = latestPairStmt.pluck().get(topic.topic_id);
+        if (!latestTimestamp) continue;
+
+        const pairs = <Pair[]>pairsStmt.all(topic.topic_id, latestTimestamp);
+        pairs.forEach((pair) => {
+            cacheSet(topic.topic_id, pair.name, pair.value, pair.pair_id || 0);
+        });
+    };
+}
+
+export function cachePairsGet(topicId: number | bigint): { name: string, value: string | number, pairId: number; }[] {
+    const manifest = <string[]>lruCache.get(`${topicId}-*`);
+    if (!manifest) return [];
+
+    const split = manifest.map(m => m.split('-'));
+    const pairs = split.map(s => ({ name: s[1], value: cacheGet(topicId, s[1]), pairId: s[2] ? Number(s[2]) : 0 }));
+
+    return pairs;
+};
+
+function cacheSet(topicId: number | bigint, name: string, value: number | string, pairId: number | bigint = 0) {
+    const key = pairId > 0 ? `${topicId}-${name}-${pairId}` : `${topicId}-${name}`;
+    lruCache.set(key, value);
+
+    const manifestKey = `${topicId}-*`;
+    const manifest = <string[]>lruCache.get(manifestKey) || [];
+    if (!manifest.includes(key)) {
+        lruCache.set(manifestKey, [...manifest, key]);
+    }
+}
 
 export function sqliteDate(offsetToUtc: boolean, date?: Date): string {
     const dateFormat = 'yyyy-MM-dd HH:mm:ss';
@@ -84,7 +125,7 @@ export function sqliteDate(offsetToUtc: boolean, date?: Date): string {
 }
 
 export function storageInit(options?: BetterSqllite3.Options): BetterSqllite3.Database {
-    db = new BetterSqllite3('./data/puddle.sqlite', options);
+    db = new BetterSqllite3(`${__dirname}/../data/puddle.sqlite`, options);
     db.pragma('journal_mode = WAL');
 
     return db;
@@ -113,8 +154,6 @@ export function storeMessage(topic: string, jsonString: string, creationDate?: D
                 return topicId;
             }
             else if (lastMessage.count > 1) {
-                db.prepare('UPDATE pairs SET is_latest=? WHERE topic_id=?').run(0, topicId);
-
                 const lastJson = JSON.parse(lastMessage.jsonString);
                 Object.keys(lastJson).forEach((k) => {
                     storePair(topicId, 0, k, lastJson[k], lastMessage.created);
@@ -123,12 +162,16 @@ export function storeMessage(topic: string, jsonString: string, creationDate?: D
         }
         lastMessages.set(topic, { count: 1, jsonString, created });
 
-        db.prepare('UPDATE pairs SET is_latest=? WHERE topic_id=?').run(0, topicId);
+        try {
+            const json = JSON.parse(jsonString);
 
-        const json = JSON.parse(jsonString);
-        Object.keys(json).forEach((k) => {
-            storePair(topicId, 0, k, json[k], created);
-        });
+            Object.keys(json).forEach((k) => {
+                storePair(topicId, 0, k, json[k], created);
+            });
+        }
+        catch (error) {
+            topicId = 0;
+        }
     })();
 
     return topicId;
@@ -147,8 +190,10 @@ function storePair(topicId: number | bigint, pairId: number | bigint, name: stri
         });
     }
     else {
-        if (typeof value === 'boolean') pairStmt.run(topicId, pairId, name, value ? 1 : 0, 0, created);
-        else pairStmt.run(topicId, pairId, name, value, 0, created);
+        const normValue = typeof value === 'boolean' ? value ? 1 : 0 : value;
+        // Don't store nested json in cache
+        if (!pairId) cacheSet(topicId, name, normValue);
+        pairStmt.run(topicId, pairId, name, normValue, 0, created);
     }
 }
 

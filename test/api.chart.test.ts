@@ -5,7 +5,8 @@ import { expect } from '@hapi/code';
 import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
-import { randAccessory, randWord } from '@ngneat/falso';
+import { randAccessory, randNumber, randWord } from '@ngneat/falso';
+import { topicGenerate } from './helpers/factory';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, it, test } = lab;
@@ -106,6 +107,56 @@ experiment('setup charts', () => {
         expect(getUpdate.topic_id).to.be.equal(topicId);
         expect(getUpdate.name).to.be.equal(chartUpdate.name);
         expect(getUpdate.key).to.be.equal(chartUpdate.key);
+    });
+
+    test('setup and get a favorite chart state', async () => {
+        const topic = topicGenerate();
+        const humidity = randNumber({ min: 5, max: 110 });
+        const topicId = storeMessage(topic, `{"linkquality":59,"humidity":${humidity},"update":"available"}`);
+
+        const chart = {
+            chart_id: 0,
+            topic_id: topicId,
+            name: randAccessory(),
+            key: 'humidity',
+            is_favorite: true
+        };
+        const res = await server.inject({
+            method: 'post',
+            url: '/api/chart/setup',
+            payload: chart,
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(res.statusCode).to.equal(200);
+
+        const { result }: { result: any; } = res;
+        expect(result).to.be.object();
+        expect(Number(result.chart_id)).to.be.greaterThan(0);
+
+        const getRes = await server.inject({
+            method: 'post',
+            url: '/api/favorite/states/get',
+            payload: {},
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(getRes.statusCode).to.equal(200);
+
+        const { result: getResult }: { result: any; } = getRes;
+        expect(getResult).to.be.object();
+        expect(getResult.states).to.be.array();
+
+        const states: [] = getResult.states;
+        expect(states.length).to.be.greaterThan(0);
+
+        const state: any = states.find((s: any) => s.topic_id == topicId);
+        expect(state).to.be.object();
+        expect(state?.state).to.equal(humidity);
     });
 
     test('setup and get all charts', async () => {

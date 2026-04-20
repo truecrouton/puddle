@@ -4,11 +4,12 @@ import Lab from '@hapi/lab';
 import { expect } from '@hapi/code';
 import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
-import { storageInit, storeMessage, AutomationSteps } from "../src/storage";
+import { storageInit, storeMessage } from "../src/storage";
 import { triggerTopicAutomations, triggerSunAutomations, triggerTimeAutomations } from "../src/automation";
 import { randNumber, randSoonDate, randVerb, randWord } from '@ngneat/falso';
-import { automationCreate, factoryInit } from './helpers/factory';
+import { automationCreate, factoryInit, topicGenerate } from './helpers/factory';
 import { format } from 'date-fns';
+import { AutomationExpressionSetupPayloadInterface } from '../src/routes/interfaces';
 
 const lab = Lab.script();
 const { afterEach, beforeEach, before, experiment, test } = lab;
@@ -18,6 +19,7 @@ experiment('setup and run automations', () => {
     let server: Server;
 
     before((async () => {
+        process.env.BASE_TOPIC = 'zigbee2mqtt';
         storageInit({ fileMustExist: true });
     }));
 
@@ -31,8 +33,9 @@ experiment('setup and run automations', () => {
     });
 
     test('trigger a topic automation', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
+        const topic = topicGenerate('');
+        const fullTopic = `zigbee2mqtt/${topic}`;
+        const topicId = storeMessage(fullTopic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
         const message = '{"state":"ON"}';
         const triggerKey = randWord().toLowerCase();
         const triggerValue = randVerb().toLowerCase();
@@ -44,19 +47,12 @@ experiment('setup and run automations', () => {
             trigger_value: triggerValue
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'value',
-                    left_value: 'ON',
-                    right_operand_kind: 'topic',
-                    right_topic_id: topicId,
-                    right_topic_key: 'state_bottom'
-                }],
-                steps: [{
+                expression: `'ON' == ${topic}.state_bottom`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId,
                     message,
@@ -69,8 +65,8 @@ experiment('setup and run automations', () => {
         };
         const { result }: { result: any; } = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -79,7 +75,7 @@ experiment('setup and run automations', () => {
         expect(result.automation_id).to.be.number();
         expect(result.automation_id).to.equal(automationId);
 
-        const triggerRes = triggerTopicAutomations(topic, `{ "${triggerKey}":"${triggerValue}" }`);
+        const triggerRes = triggerTopicAutomations(fullTopic, `{ "${triggerKey}":"${triggerValue}" }`);
         expect(triggerRes).to.be.array();
         expect(triggerRes.length).to.equal(1);
 
@@ -95,8 +91,9 @@ experiment('setup and run automations', () => {
     });
 
     test('trigger a topic automation with a number value', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}_${randWord().toLowerCase()}`;
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
+        const topic = topicGenerate('');
+        const fullTopic = `zigbee2mqtt/${topic}`;
+        const topicId = storeMessage(fullTopic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
         const message = '{"state":"ON"}';
         const triggerKey = randWord().toLowerCase();
         const triggerValue = String(randNumber({ min: 1, max: 100, precision: 1 }));
@@ -109,19 +106,12 @@ experiment('setup and run automations', () => {
             trigger_value: triggerValue
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'value',
-                    left_value: 'ON',
-                    right_operand_kind: 'topic',
-                    right_topic_id: topicId,
-                    right_topic_key: 'state_bottom'
-                }],
-                steps: [{
+                expression: `"ON" == ${topic}.state_bottom`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId,
                     message,
@@ -134,8 +124,8 @@ experiment('setup and run automations', () => {
         };
         const { result }: { result: any; } = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -144,7 +134,7 @@ experiment('setup and run automations', () => {
         expect(result.automation_id).to.be.number();
         expect(result.automation_id).to.equal(automationId);
 
-        const triggerRes = triggerTopicAutomations(topic, triggerMessage);
+        const triggerRes = triggerTopicAutomations(fullTopic, triggerMessage);
         expect(triggerRes).to.be.array();
         expect(triggerRes.length).to.equal(1);
 
@@ -160,8 +150,9 @@ experiment('setup and run automations', () => {
     });
 
     test('trigger a topic automation without a trigger key', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
+        const topic = topicGenerate('');
+        const fullTopic = `zigbee2mqtt/${topic}`;
+        const topicId = storeMessage(fullTopic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
         const message = '{"state":"ON"}';
         const ignoredMessage = JSON.stringify({ [randWord().toLowerCase()]: randWord().toLowerCase() });
 
@@ -170,19 +161,12 @@ experiment('setup and run automations', () => {
             topic_id: topicId
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'value',
-                    left_value: 'ON',
-                    right_operand_kind: 'topic',
-                    right_topic_id: topicId,
-                    right_topic_key: 'state_bottom'
-                }],
-                steps: [{
+                expression: `'ON' == ${topic}.state_bottom`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId,
                     message,
@@ -195,8 +179,8 @@ experiment('setup and run automations', () => {
         };
         const { result }: { result: any; } = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -205,7 +189,7 @@ experiment('setup and run automations', () => {
         expect(result.automation_id).to.be.number();
         expect(result.automation_id).to.equal(automationId);
 
-        const triggerRes = triggerTopicAutomations(topic, ignoredMessage);
+        const triggerRes = triggerTopicAutomations(fullTopic, ignoredMessage);
         expect(triggerRes).to.be.array();
         expect(triggerRes.length).to.equal(1);
 
@@ -221,8 +205,8 @@ experiment('setup and run automations', () => {
     });
 
     test('trigger a sun automation', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
+        const topic = topicGenerate('');
+        const topicId = storeMessage(`zigbee2mqtt/${topic}`, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
         const message = '{"state":"ON"}';
         const position = "goldenHour";
 
@@ -231,19 +215,12 @@ experiment('setup and run automations', () => {
             position
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'value',
-                    left_value: 'ON',
-                    right_operand_kind: 'topic',
-                    right_topic_id: topicId,
-                    right_topic_key: 'state_bottom'
-                }],
-                steps: [{
+                expression: `'ON' == ${topic}.state_bottom`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId,
                     message,
@@ -256,8 +233,8 @@ experiment('setup and run automations', () => {
         };
         const { result }: { result: any; } = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -268,9 +245,9 @@ experiment('setup and run automations', () => {
 
         const triggerRes = triggerSunAutomations(position);
         expect(triggerRes).to.be.array();
-        expect(triggerRes.length).to.be.greaterThan(0);
+        expect(triggerRes.length as number).to.be.greaterThan(0);
 
-        const runRes = <AutomationSteps>triggerRes.find((r) => r.automation_id === automationId);
+        const runRes = triggerRes.find((r) => r.automation_id === automationId)!;
         expect(runRes).to.be.object();
         expect(runRes.automation_id).to.equal(automationId);
         expect(runRes.result).to.be.array();
@@ -283,8 +260,8 @@ experiment('setup and run automations', () => {
     });
 
     test('trigger a time automation', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
-        const topicId = storeMessage(topic, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
+        const topic = topicGenerate('');
+        const topicId = storeMessage(`zigbee2mqtt/${topic}`, '{"linkquality":100,"state_bottom":"ON","state_top":"OFF"}');
         const message = '{"state":"ON"}';
         const time = format(randSoonDate(), "hh:mm");
 
@@ -293,19 +270,12 @@ experiment('setup and run automations', () => {
             trigger_at: time
         });
 
-        const steps = {
+        const expressions: AutomationExpressionSetupPayloadInterface = {
             automation_id: automationId,
-            steps: [{
+            expressions: [{
                 kind: 'if',
-                conditions: [{
-                    kind: 'eq',
-                    left_operand_kind: 'value',
-                    left_value: 'ON',
-                    right_operand_kind: 'topic',
-                    right_topic_id: topicId,
-                    right_topic_key: 'state_bottom'
-                }],
-                steps: [{
+                expression: `'ON' == ${topic}.state_bottom`,
+                nested_expressions: [{
                     kind: 'publish',
                     topic_id: topicId,
                     message,
@@ -318,8 +288,8 @@ experiment('setup and run automations', () => {
         };
         const { result }: { result: any; } = await server.inject({
             method: 'post',
-            url: `/api/automation/steps/setup`,
-            payload: steps,
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
             auth: {
                 strategy: 'session',
                 credentials: {}
@@ -330,9 +300,9 @@ experiment('setup and run automations', () => {
 
         const triggerRes = triggerTimeAutomations(time);
         expect(triggerRes).to.be.array();
-        expect(triggerRes.length).to.be.greaterThan(0);
+        expect(triggerRes.length as number).to.be.greaterThan(0);
 
-        const runRes = <AutomationSteps>triggerRes.find((r) => r.automation_id === automationId);
+        const runRes = triggerRes.find((r) => r.automation_id === automationId)!;
         expect(runRes.automation_id).to.equal(automationId);
         expect(runRes.result).to.be.array();
         expect(runRes.result.length).to.equal(1);

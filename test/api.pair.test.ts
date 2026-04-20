@@ -7,6 +7,7 @@ import { Server } from '@hapi/hapi';
 import { storageInit, storeMessage } from "../src/storage";
 import { randNumber, randWord } from '@ngneat/falso';
 import { addMinutes, addSeconds, subSeconds } from 'date-fns';
+import { topicGenerate } from './helpers/factory';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, it, test } = lab;
@@ -28,7 +29,7 @@ experiment('retrieve pairs', () => {
     });
 
     test('get pairs', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const now = new Date();
         const start = subSeconds(now, 90);
 

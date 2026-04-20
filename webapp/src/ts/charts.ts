@@ -1,6 +1,4 @@
 import bootstrap = require('bootstrap');
-import { Chart } from 'chart.js/auto';
-import 'chartjs-adapter-date-fns';
 import { addMinutes, endOfDay, startOfDay } from 'date-fns';
 import { DateRangePicker } from 'vanillajs-datepicker';
 import { DateRangePickerOptions } from 'vanillajs-datepicker/DateRangePicker';
@@ -32,15 +30,17 @@ const selectSettingsFavorite = <HTMLSelectElement>document.getElementById('selec
 const selectSettingsTopic = <HTMLSelectElement>document.getElementById('selectSettingsTopic');
 const selectTopic = <HTMLSelectElement>document.getElementById('selectTopic');
 
-let chart: Chart;
-
 function disableHoursRange(disable: boolean) {
     radioHoursAll.checked = true;
 
     document.querySelectorAll('input[name="radioHoursRange"]').forEach((radio: HTMLInputElement) => radio.disabled = disable);
 }
 
-function generateChart() {
+async function generateChart() {
+    // Dynamic import to ensure adapter gets loaded second
+    const { default: Chart } = await import('chart.js/auto');
+    await import('chartjs-adapter-date-fns');
+
     const topicId = Number(selectTopic.value);
     const name = selectKey.value;
 
@@ -48,7 +48,11 @@ function generateChart() {
 
     history.replaceState(null, '', `charts.html?topic_id=${topicId}&key=${name}`);
 
-    if (chart) chart.destroy();
+    // Let go of canvas if there was a previous chart
+    const existingChart = Chart.getChart(canvasChart);
+    if (existingChart) {
+        existingChart.destroy();
+    }
 
     const startDate = startOfDay(inputGroupDateRange.getDates()[0]);
     const endDate = endOfDay(inputGroupDateRange.getDates()[1]);
@@ -74,9 +78,14 @@ function generateChart() {
     };
 
     callApi('/pairs/get', req).then((res: any) => {
-        const pairs = res.pairs.map(p => ({ x: `${p.created_at}Z`, y: p.value }));
+        const valueMap = { ON: 1, OFF: 0 };
+        const pairs = res.pairs.map(p => {
+            const value = valueMap[p.value] ?? p.value;
+            return { x: `${p.created_at}Z`, y: value };
+        });
+        pairs.sort((a, b) => a.x.localeCompare(b.x));
 
-        chart = new Chart(canvasChart, {
+        new Chart(canvasChart, {
             type: 'line',
             data: {
                 datasets: [{

@@ -3,19 +3,20 @@ import { badImplementation, badRequest } from "@hapi/boom";
 import Joi from "joi";
 import { connect } from "mqtt";
 import dotenv from 'dotenv';
-import { storageInit, Automation, Device, Pair, Topic, AutomationStep, DeviceStatusKey, User, sqliteDate, Chart } from "../storage";
+import { db, Automation, Device, Pair, Topic, AutomationStep, DeviceStatusKey, User, sqliteDate, Chart, cacheGet, cachePairsGet } from "../storage";
 import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from "../schedule";
 import { scheduledJobs } from "node-schedule";
 import { parseISO } from "date-fns";
 import { runAutomation } from "../automation";
 import { celsiusToFahrenheit, hashPassword } from "../helper";
 import { randomBytes } from "crypto";
+import { AutomationDeletePayloadSchema, AutomationExpressionSetupPayloadSchema, AutomationGetPayloadSchema, AutomationRunPayloadSchema, AutomationSetupPayloadSchema, AutomationsGetPayloadSchema } from "./schemas/automation.schema";
+import { AutomationGetPayloadInterface, AutomationRunPayloadInterface, AutomationDeletePayloadInterface, AutomationExpressionSetupPayloadInterface, AutomationExpressionInterface, AutomationIdInterface } from './interfaces';
 
-export const db = storageInit({ fileMustExist: true });
 const mqtt = connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
 
 async function automationDelete(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const { automation_id: automationId }: any = request.payload;
+    const { automation_id: automationId } = <AutomationDeletePayloadInterface>request.payload;
 
     const steps = <AutomationStep[]>db.prepare('SELECT id AS step_id from automation_steps where automation_id=?').all(automationId);
 
@@ -32,24 +33,27 @@ async function automationDelete(request: Request, h: ResponseToolkit): Promise<R
 }
 
 async function automationGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const payload: any = request.payload;
+    interface Expression extends AutomationExpressionInterface {
+        automation_id: number,
+        topic: string;
+    }
+
+    const payload = <AutomationGetPayloadInterface>request.payload;
     const automationId = payload.automation_id;
-    const automation = <Automation>db.prepare('SELECT id as automation_id, name, trigger, trigger_at, position, topic_id, trigger_key, trigger_value FROM automations WHERE id=?').get(automationId);
+    const automation = <AutomationIdInterface>db.prepare('SELECT id, name, trigger, trigger_at, position, topic_id, trigger_key, trigger_value FROM automations WHERE id=?').get(automationId);
 
     if (!payload.with_details) return h.response(automation);
 
-    const steps = <AutomationStep[]>db.prepare('SELECT automation_steps.id as step_id, kind, is_else_step, topic_id, topic, message FROM automation_steps LEFT JOIN topics on topics.id=automation_steps.topic_id WHERE conditional_step_id=0 AND automation_id=?').all(automationId);
+    const expressions = <Expression[]>db.prepare('SELECT automation_expressions.id, kind, expression, is_else_step, topic_id, topic, message FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id WHERE conditional_expression_id=0 AND automation_id=?').all(automationId);
 
-    const conditionStmt = db.prepare('SELECT id as condition_id, kind, left_operand_kind, left_preset, left_topic_id, left_topic_key, left_value, right_operand_kind, right_preset, right_topic_id, right_topic_key, right_value FROM automation_conditions WHERE step_id=?');
-    const conditionalStepsStmt = db.prepare('SELECT automation_steps.id as step_id, kind, is_else_step, topic_id, topic, message FROM automation_steps LEFT JOIN topics on topics.id=automation_steps.topic_id WHERE conditional_step_id=? AND automation_id=?');
+    const conditionalExprsStmt = db.prepare('SELECT automation_expressions.id, kind, is_else_step, topic_id, topic, message FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id WHERE conditional_expression_id=? AND automation_id=?');
 
-    automation.steps = steps.map((step) => {
-        const conditions = conditionStmt.all(step.step_id);
-        const conditionalSteps = (<AutomationStep[]>conditionalStepsStmt.all(step.step_id, automationId)).map((cStep) => ({ ...cStep, is_else_step: Boolean(cStep.is_else_step) }));
-        return { ...step, is_else_step: Boolean(step.is_else_step), conditions, steps: conditionalSteps };
+    const sequence = expressions.map((expr) => {
+        const conditionalSteps = (<Expression[]>conditionalExprsStmt.all(expr.id, automationId)).map((cStep) => ({ ...cStep, is_else_step: Boolean(cStep.is_else_step) }));
+        return { ...expr, is_else_step: Boolean(expr.is_else_step), nested_expressions: conditionalSteps };
     });
 
-    return h.response(automation);
+    return h.response({ ...automation, sequence });
 }
 
 async function automationsGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
@@ -59,9 +63,9 @@ async function automationsGet(request: Request, h: ResponseToolkit): Promise<Res
 }
 
 async function automationRun(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const { automation_id: automationId }: any = request.payload;
+    const { automation_id: automationId } = <AutomationRunPayloadInterface>request.payload;
 
-    const automation = <Automation>db.prepare('SELECT trigger FROM automations WHERE id=? AND trigger=\'user\'').get(automationId);
+    const automation = <Automation>db.prepare('SELECT trigger FROM automations WHERE trigger=\'user\' AND id=?').get(automationId);
     if (!automation) throw badRequest('Unable to run this automation');
 
     const executedSteps = runAutomation(automationId);
@@ -86,6 +90,32 @@ async function automationSetup(request: Request, h: ResponseToolkit): Promise<Re
     else if (payload.trigger === "time") {
         scheduleTimeAutomation(payload.trigger_at);
     }
+
+    return h.response({ automation_id: automationId });
+}
+
+async function automationExpressionSetup(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
+    const payload = <AutomationExpressionSetupPayloadInterface>request.payload;
+    let automationId = payload.automation_id;
+    type Expression = AutomationExpressionSetupPayloadInterface['expressions'][number];
+
+    function storeExpression(expression: Expression, automationId: number, parentExpressionId: number) {
+        const isElseStep = expression.is_else_step ? 1 : 0;
+        const stepRes = db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?)').run(automationId, expression.kind, expression.expression, parentExpressionId, expression.topic_id, expression.message, isElseStep);
+
+        const insertedStepId = <number>stepRes.lastInsertRowid;
+
+        if (expression.nested_expressions?.length && !parentExpressionId) expression.nested_expressions.forEach((nestedExpression: any) => storeExpression(nestedExpression, automationId, insertedStepId));
+
+        return insertedStepId;
+    }
+
+    db.transaction(() => {
+        db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(automationId);
+        payload.expressions?.forEach((expr) => {
+            storeExpression(expr, automationId, 0);
+        });
+    })();
 
     return h.response({ automation_id: automationId });
 }
@@ -161,14 +191,13 @@ async function chartSetup(request: Request, h: ResponseToolkit): Promise<Respons
 async function controlsGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
     const rootDevices = <Device[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')').all();
 
-    const stateStmt = db.prepare('SELECT value FROM pairs WHERE topic_id=? AND is_latest=1 AND name=?');
     const devices = rootDevices.map((d) => {
-        const pair = <Pair>stateStmt.get(d.topic_id, d.state_key);
+        const value = cacheGet(d.topic_id, d.state_key ?? '');
 
         let state: string = 'unknown';
-        if (pair) {
-            if (pair.value === d.value_on) state = 'high';
-            else if (pair.value === d.value_off) state = 'low';
+        if (value != '') {
+            if (value === d.value_on) state = 'high';
+            else if (value === d.value_off) state = 'low';
             else state = 'middle';
         }
 
@@ -187,11 +216,11 @@ async function deviceGet(request: Request, h: ResponseToolkit): Promise<Response
 
     if (!device) return h.response({});
 
-    const allPairs = <Pair[]>db.prepare('SELECT name, value FROM pairs WHERE topic_id=? AND is_latest=1 AND pair_id=0 AND is_object=0').all(device.topic_id);
+    const cachedPairs = cachePairsGet(device.topic_id);
     const allStatus = <DeviceStatusKey[]>db.prepare('SELECT id as status_key_id, status_key, name, is_shown FROM device_status_keys WHERE device_id=?').all(deviceId);
 
-    const pairs = allPairs.reduce((pairs: { [key: string]: {}; }, p) => {
-        pairs[p.name] = { value: p.value };
+    const pairs = cachedPairs.reduce((pairs: { [key: string]: {}; }, p) => {
+        p.pairId == 0 ? pairs[p.name] = { value: p.value } : pairs;
         return pairs;
     }, {});
     const status = allStatus.reduce((status: { [key: string]: {}; }, s) => {
@@ -199,7 +228,7 @@ async function deviceGet(request: Request, h: ResponseToolkit): Promise<Response
         return status;
     }, {});
 
-    const keys = new Set([...allPairs.map((p) => p.name), ...allStatus.map((s) => s.status_key)]);
+    const keys = new Set([...cachedPairs.map((p) => p.name), ...allStatus.map((s) => s.status_key)]);
     const combinedStatus = [...keys].map((k) => ({
         ...pairs[k],
         ...status[k],
@@ -275,15 +304,13 @@ async function deviceStatusSetup(request: Request, h: ResponseToolkit): Promise<
 async function favoriteStatesGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
     const charts = <Chart[]>db.prepare('SELECT name, topic_id, key FROM charts WHERE is_favorite=1').all();
 
-    const stateStmt = db.prepare('SELECT value FROM pairs WHERE topic_id=? AND is_latest=1 AND name=?');
-
     const displayFarenheit = process.env.TEMPERATURE_CONVERT_TO === 'F';
     const states = charts.map((c) => {
-        const pair = <Pair>stateStmt.get(c.topic_id, c.key);
+        const value = cacheGet(c.topic_id, c.key);
 
         return {
             ...c,
-            state: displayFarenheit && c.key === 'temperature' ? celsiusToFahrenheit(pair.value) : pair.value
+            state: displayFarenheit && c.key === 'temperature' ? celsiusToFahrenheit(value) : value
         };
     });
 
@@ -300,7 +327,7 @@ async function pairsGet(request: Request, h: ResponseToolkit): Promise<ResponseO
     const utcStart = sqliteDate(false, parseISO(startDate));
     const utcEnd = sqliteDate(false, parseISO(endDate));
 
-    const pairs = <Pair[]>db.prepare('SELECT value, created_at FROM pairs where pair_id=0 AND is_object=0 AND topic_id=? AND name=? AND created_at>=? AND created_at<=?').all(topicId, name, utcStart, utcEnd);
+    const pairs = <Pair[]>db.prepare('SELECT value, created_at FROM pairs where topic_id=? AND pair_id=0 AND is_object=0 AND name=? AND created_at>=? AND created_at<=?').all(topicId, name, utcStart, utcEnd);
 
     const displayFarenheit = name === 'temperature' && process.env.TEMPERATURE_CONVERT_TO === 'F';
     const convertedPairs = pairs.map((p) => displayFarenheit ? { ...p, value: celsiusToFahrenheit(p.value) } : p);
@@ -312,7 +339,7 @@ async function passwordReset(request: Request, h: ResponseToolkit): Promise<Resp
     const { username, new_password: newPassword, auth_phrase: authPhrase }: any = request.payload;
 
     const secret: any = {};
-    dotenv.config({ path: './secret.env', processEnv: secret });
+    dotenv.config({ path: `${__dirname}/../../secret.env`, processEnv: secret });
     if (authPhrase !== secret.AUTH_PHRASE) throw badRequest('The authorization phrase is invalid or disabled');
 
     const user = <User>db.prepare('SELECT id as user_id FROM users where username=?').get(username);
@@ -333,7 +360,7 @@ async function scheduleGet(request: Request, h: ResponseToolkit): Promise<Respon
         name: scheduledJobs[job].name,
         runs_at: scheduledJobs[job].nextInvocation(),
         automations: automationStmt.all(job, job)
-    }], <{ name: string, runs_at: Date; }[]>[]);
+    }], <{ name: string, runs_at: Date | null; }[]>[]);
 
     return h.response({ schedule });
 }
@@ -342,10 +369,9 @@ async function topicGet(request: Request, h: ResponseToolkit): Promise<ResponseO
     const { topic_id: topicId }: any = request.payload;
 
     const topic = <Topic>db.prepare('SELECT id as topic_id, topic from topics where id=?').get(topicId);
+    const cachedPairs = cachePairsGet(topicId);
 
-    const pairs = <Pair[]>db.prepare('SELECT name, value FROM pairs WHERE is_latest=1 AND pair_id=0 AND is_object=0 AND topic_id=?').all(topicId);
-
-    return h.response({ ...topic, status: pairs });
+    return h.response({ ...topic, status: cachedPairs.filter(p => p.pairId == 0) });
 }
 
 async function topicsGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
@@ -386,7 +412,7 @@ async function userAdd(request: Request, h: ResponseToolkit): Promise<ResponseOb
     const { username, password, name, is_admin: isAdmin, auth_phrase: authPhrase }: any = request.payload;
 
     const secret: any = {};
-    dotenv.config({ path: './secret.env', processEnv: secret });
+    dotenv.config({ path: `${__dirname}/../../secret.env`, processEnv: secret });
     if (authPhrase !== secret.AUTH_PHRASE) throw badRequest('The authorization phrase is invalid or disabled');
 
     const userRes = db.prepare('INSERT INTO USERS (username, password, name, is_admin) VALUES(?, ?, ?, ?)').run(username, hashPassword(password), name, isAdmin ? 1 : 0);
@@ -438,57 +464,55 @@ export const routesApi: ServerRoute[] = [
     {
         method: "POST",
         path: "/api/automation/delete",
-        handler: automationDelete,
         options: {
+            handler: automationDelete,
             validate: {
-                payload: Joi.object({
-                    automation_id: Joi.number().integer().min(1).required()
-                })
+                payload: AutomationDeletePayloadSchema
             }
         }
     },
     {
         method: "POST",
         path: "/api/automation/get",
-        handler: automationGet,
         options: {
+            handler: automationGet,
             validate: {
-                payload: Joi.object({
-                    automation_id: Joi.number().integer().min(1).required(),
-                    with_details: Joi.bool().default(true)
-                })
+                payload: AutomationGetPayloadSchema
             }
         }
     },
     {
         method: "POST",
         path: "/api/automation/run",
-        handler: automationRun,
         options: {
+            handler: automationRun,
             validate: {
-                payload: Joi.object({
-                    automation_id: Joi.number().integer().min(1).required()
-                })
+                payload: AutomationRunPayloadSchema
             }
         }
     },
     {
         method: "POST",
         path: "/api/automation/setup",
-        handler: automationSetup,
         options: {
+            handler: automationSetup,
             validate: {
-                payload: Joi.object({
-                    automation_id: Joi.number().integer().min(0).required(),
-                    name: Joi.string().max(100).required(),
-                    trigger: Joi.string().valid("time", "sun", "topic", "user").required(),
-                    trigger_at: Joi.when('trigger', { is: 'time', then: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required() }),
-                    position: Joi.when('trigger', { is: 'sun', then: Joi.string().valid("solarNoon", "nadir", "sunrise", "sunset", "sunriseEnd", "sunsetStart", "dawn", "dusk", "nauticalDawn", "nauticalDusk", "nightEnd", "night", "goldenHourEnd", "goldenHour", "morning", "afternoon", "lateMorning", "evening").required() }),
-                    topic_id: Joi.when('trigger', { is: 'topic', then: Joi.number().integer().min(1).required(), }),
-                    trigger_key: Joi.when('trigger', { is: 'topic', then: Joi.string().min(0).max(100) }),
-                    trigger_value: Joi.when('trigger', { is: 'topic', then: Joi.string().min(0).max(100) }),
-                    is_control_shown: Joi.when('trigger', { is: 'user', then: Joi.boolean().required() })
-                })
+                payload: AutomationSetupPayloadSchema
+            }
+        }
+    },
+    {
+        method: "POST",
+        path: "/api/automation/expressions/setup",
+        options: {
+            handler: automationExpressionSetup,
+            validate: {
+                payload: AutomationExpressionSetupPayloadSchema,
+                failAction: (request, h, err) => {
+                    // err.details will now contain an ARRAY of every failing field
+                    console.error(err);
+                    throw err;
+                }
             }
         }
     },
@@ -529,10 +553,10 @@ export const routesApi: ServerRoute[] = [
     {
         method: "POST",
         path: "/api/automations/get",
-        handler: automationsGet,
         options: {
+            handler: automationsGet,
             validate: {
-                payload: Joi.object().valid({}).required()
+                payload: AutomationsGetPayloadSchema
             }
         }
     },

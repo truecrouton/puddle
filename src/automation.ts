@@ -1,137 +1,15 @@
 import { compareAsc, compareDesc, endOfDay, endOfMonth, format, startOfDay, addMilliseconds, subMilliseconds, parseISO, differenceInSeconds, addMinutes } from 'date-fns';
 import { connect } from "mqtt";
 import { getTimes } from 'suncalc';
-import { AutomationStep, AutomationSteps, Automation, Topic, storageInit } from "./storage";
+import { db, Automation, Topic, cacheGet } from "./storage";
+import { AutomationExpressionInterface } from './routes/interfaces';
+import { evaluate } from './expressions';
 
-export const db = storageInit({ fileMustExist: true });
+interface AutomationExpressions { automation_id: number, result: AutomationExpressionInterface[]; }
+
 const mqtt = connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
 
-function checkConditions(stepId: number): boolean {
-    const conditions: any[] = db.prepare('SELECT kind, left_operand_kind, left_preset, left_topic_id, left_topic_key, left_value, right_operand_kind, right_preset, right_topic_id, right_topic_key, right_value FROM automation_conditions where step_id=?').all(stepId);
-
-    if (!conditions.length) return false;
-    conditions.sort((a, b) => {
-        if (a.left_operand_kind === b.left_operand_kind) {
-            if (a.right_operand_kind === b.right_operand_kind) {
-                if (a.kind === b.kind) return 0;
-                else return ["inc", "dec", 'lgt', 'llt', 'leq', 'lneq'].includes(a.kind) ? 1 : -1;
-            }
-            else return ['preset', 'value'].includes(a.right_operand_kind) ? -1 : 1;
-        }
-        else return ['preset', 'value'].includes(a.left_operand_kind) ? -1 : 1;
-    });
-
-    for (const condition of conditions) {
-        let leftOp = '';
-        let rightOp = '';
-        let rightTimeOp = '';
-
-        if (condition.left_preset) {
-            leftOp = presetValue(condition.left_preset);
-        }
-        else if (condition.left_value) {
-            leftOp = condition.left_value;
-        }
-        else if (condition.left_topic_id) {
-            leftOp = topicValue(condition.left_topic_id, condition.left_topic_key);
-        }
-
-        if (condition.right_preset) {
-            rightOp = presetValue(condition.right_preset);
-        }
-        else if (condition.right_value) {
-            if (['lgt', 'llt', 'leq', 'lneq'].includes(condition.kind)) {
-                const values = condition.right_value.split(',');
-                if (values.length < 2) return false;
-
-                rightOp = values[0];
-                rightTimeOp = values[1];
-            }
-            else {
-                rightOp = condition.right_value;
-            }
-        }
-        else if (condition.right_topic_id) {
-            rightOp = topicValue(condition.right_topic_id, condition.right_topic_key);
-        }
-
-        let result = false;
-        switch (condition.kind) {
-            case "and":
-                result = leftOp.length > 0 && rightOp.length > 0;
-                break;
-            case "or":
-                result = leftOp.length > 0 || rightOp.length > 0;
-                break;
-            case "eq":
-                result = leftOp == rightOp;
-                break;
-            case "neq":
-                result = leftOp != rightOp;
-                break;
-            case "gt":
-                result = leftOp > rightOp;
-                break;
-            case "gte":
-                result = leftOp >= rightOp;
-                break;
-            case "leq":
-                {
-                    const history = <{ created_at: string; }[]>db.prepare('SELECT created_at FROM pairs WHERE topic_id=? AND name=? and value=? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, rightOp);
-
-                    result = checkLastCondition(history[0]?.created_at, rightTimeOp);
-                }
-                break;
-            case "lgt":
-                {
-                    const history = <{ created_at: string; }[]>db.prepare('SELECT created_at FROM pairs WHERE topic_id=? AND name=? and value>? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, rightOp);
-
-                    result = checkLastCondition(history[0]?.created_at, rightTimeOp);
-                }
-                break;
-            case "llt":
-                {
-                    const history = <{ created_at: string; }[]>db.prepare('SELECT created_at FROM pairs WHERE topic_id=? AND name=? and value<? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, rightOp);
-
-                    result = checkLastCondition(history[0]?.created_at, rightTimeOp);
-                }
-                break;
-            case "lneq":
-                {
-                    const history = <{ created_at: string; }[]>db.prepare('SELECT created_at FROM pairs WHERE topic_id=? AND name=? and value<>? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, rightOp);
-
-                    result = checkLastCondition(history[0]?.created_at, rightTimeOp);
-                }
-                break;
-            case "lt":
-                result = leftOp < rightOp;
-                break;
-            case "lte":
-                result = leftOp <= rightOp;
-                break;
-            case "inc":
-                if (leftOp > rightOp) {
-                    const history = <{ value: string; }[]>db.prepare('SELECT value FROM pairs WHERE topic_id=? AND name=? and value<>? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, leftOp);
-
-                    result = history.length > 0 && history[0].value < leftOp && history[0].value <= rightOp;
-                }
-                break;
-            case "dec":
-                if (leftOp < rightOp) {
-                    const history = <{ value: string; }[]>db.prepare('SELECT value FROM pairs WHERE topic_id=? AND name=? and value<>? ORDER BY created_at desc LIMIT 1').all(condition.left_topic_id, condition.left_topic_key, leftOp);
-
-                    result = history.length > 0 && history[0].value > leftOp && history[0].value >= rightOp;
-                }
-                break;
-        }
-
-        if (!result) return false;
-    };
-
-    return true;
-}
-
-function checkLastCondition(createdAt: string | undefined, rightTimeOp: string) {
+export function checkLastCondition(createdAt: string | undefined, rightTimeOp: string) {
     if (!createdAt) return false;
 
     const lastTime = parseISO(createdAt);
@@ -144,7 +22,7 @@ function checkLastCondition(createdAt: string | undefined, rightTimeOp: string) 
     else return seconds === rightTimeValue;
 }
 
-function presetValue(preset: string): string {
+export function presetValue(preset: string): string {
     let value = '';
     const today = new Date();
     const year = today.getFullYear();
@@ -212,42 +90,54 @@ function presetValue(preset: string): string {
     return value;
 }
 
-function topicValue(topicId: number, key: string): string {
-    const pair: any = db.prepare('SELECT value FROM pairs WHERE is_latest=? AND is_object=? AND name=? AND topic_id=?').get(1, 0, key, topicId);
-
-    return pair?.value ?? '';
-}
-
 export function savedAutomations(): Automation[] {
     const automations = <Automation[]>db.prepare('SELECT id, trigger, trigger_at, position FROM automations WHERE trigger IN (?, ?)').all('sun', 'time');
 
     return automations;
 }
 
-export function runAutomation(automationId: number): AutomationStep[] {
-    const steps = <AutomationStep[]>db.prepare('SELECT id as step_id, kind, conditional_step_id, is_else_step, topic_id, message FROM automation_steps where automation_id=?').all(automationId);
+export function runAutomation(automationId: number) {
+    const exprs = <AutomationExpressionInterface[]>db.prepare('SELECT id, kind, expression, conditional_expression_id, is_else_step, topic_id, message FROM automation_expressions where automation_id=?').all(automationId);
     const topicStmt = db.prepare('SELECT topic FROM topics where id=?');
 
-    if (!steps.length) return [];
+    if (!exprs.length) return [];
 
     const conditionalSteps = ['if'];
-    const conditionalResults = steps.reduce((res, step) => conditionalSteps.includes(step.kind) && checkConditions(step.step_id) ? [...res, step.step_id] : res, <number[]>[]);
+    const conditionalResults = exprs.reduce((res, expr) => conditionalSteps.includes(expr.kind) && evaluate(expr.expression) ? [...res, expr.id!] : res, <number[]>[]);
 
-    const executableSteps: AutomationStep[] = [];
-    for (const step of steps.filter((step) => !conditionalSteps.includes(step.kind))) {
-        if (step.conditional_step_id && (!step.is_else_step && !conditionalResults.includes(step.conditional_step_id)) || (step.is_else_step && conditionalResults.includes(step.conditional_step_id))) {
+    const executableSteps: AutomationExpressionInterface[] = [];
+    for (const expr of exprs.filter((e) => !conditionalSteps.includes(e.kind))) {
+        if (expr.conditional_expression_id && (!expr.is_else_step && !conditionalResults.includes(expr.conditional_expression_id)) || (expr.is_else_step && conditionalResults.includes(expr.conditional_expression_id || 0))) {
             continue;
         }
-        executableSteps.push(step);
+        executableSteps.push(expr);
 
-        if (process.env.NODE_ENV === 'test') continue;
-
-        switch (step.kind) {
+        switch (expr.kind) {
             case 'notify':
                 break;
             case 'publish':
-                const topic = <Topic>topicStmt.get(step.topic_id);
-                mqtt.publish(topic.topic, step.message);
+                const topic = <Topic>topicStmt.get(expr.topic_id);
+                let valuesMatch = false;
+                try {
+                    const result = JSON.parse(expr.message!);
+                    const isKeyValueObject =
+                        typeof result === 'object' &&
+                        result !== null &&
+                        !Array.isArray(result);
+
+                    if (isKeyValueObject) {
+                        const firstKey = Object.keys(result)[0];
+                        const currentValue = cacheGet(expr.topic_id!, firstKey);
+                        valuesMatch = result[firstKey] == currentValue;
+                    }
+                    else valuesMatch = false;
+
+                }
+                catch (error) {
+                    console.error(expr.message, error);
+                    valuesMatch = false;
+                }
+                if (!valuesMatch && process.env.NODE_ENV != 'test') mqtt.publish(topic.topic, expr.message!);
                 break;
             case 'wait':
                 break;
@@ -259,7 +149,7 @@ export function runAutomation(automationId: number): AutomationStep[] {
     return executableSteps;
 }
 
-export function triggerTopicAutomations(topic: string, jsonString: string): AutomationSteps[] {
+export function triggerTopicAutomations(topic: string, jsonString: string): AutomationExpressions[] {
     const automations = <Automation[]>db.prepare('SELECT automations.id, trigger_key, trigger_value FROM topics LEFT JOIN automations ON automations.topic_id=topics.id WHERE trigger=? and topic=?').all('topic', topic);
 
     const json = JSON.parse(jsonString);
@@ -276,7 +166,7 @@ export function triggerTopicAutomations(topic: string, jsonString: string): Auto
     }));
 }
 
-export function triggerSunAutomations(position: string): AutomationSteps[] {
+export function triggerSunAutomations(position: string): AutomationExpressions[] {
     const automations = <Automation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and position=?').all('sun', position);
 
     return automations.map((a) => ({
@@ -285,7 +175,7 @@ export function triggerSunAutomations(position: string): AutomationSteps[] {
     }));
 }
 
-export function triggerTimeAutomations(time: string): AutomationSteps[] {
+export function triggerTimeAutomations(time: string): AutomationExpressions[] {
     const automations = <Automation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and trigger_at=?').all('time', time);
 
     return automations.map((a) => ({

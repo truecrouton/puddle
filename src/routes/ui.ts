@@ -9,7 +9,7 @@ export const routesUi: ServerRoute[] = [
         path: '/{param*}',
         handler: {
             directory: {
-                path: './webapp/dist'
+                path: `${__dirname}/../../webapp/dist`
             }
         },
         options: {
