@@ -1,4 +1,6 @@
 # Puddle
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+
 ![Home page](repo/puddle.svg "Puddle")
 
 A simple home control and automation runner for [mqtt](https://mqtt.org). Provides an API for custom frontends or use the included web interface. Runs on [Node.js](https://nodejs.org).

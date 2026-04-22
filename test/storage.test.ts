@@ -4,9 +4,10 @@ import Lab from '@hapi/lab';
 import { expect } from '@hapi/code';
 import { init } from '../src/server';
 import { Server } from '@hapi/hapi';
-import { Topic, storageInit, storeMessage } from "../src/storage";
+import { storageInit, storeMessage } from "../src/storage";
 import { randWord } from '@ngneat/falso';
 import { addSeconds, subSeconds, addMinutes } from 'date-fns';
+import { topicGenerate } from './helpers/factory';
 
 const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, test } = lab;
@@ -28,12 +29,12 @@ experiment('store and get mqtt messages', () => {
     });
 
     test('storing and retrieving a mqtt message', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, '{"linkquality":99,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
 
         expect(topicId).to.be.greaterThan(0);
 
-        const { result }: { result: Topic | undefined; } = await server.inject({
+        const { result }: { result: any; } = await server.inject({
             method: 'post',
             url: '/api/topic/get',
             payload: { topic_id: topicId },
@@ -46,11 +47,68 @@ experiment('store and get mqtt messages', () => {
         expect(result?.topic).to.equal(topic);
     });
 
+    test('confirming cache invalidation', async () => {
+        const topic = topicGenerate();
+
+        const topicId1 = storeMessage(topic, '{"humidity":43, "occupancy":0, "no_occupancy_since":60, "update":{"state":"available"}}');
+        expect(topicId1).to.be.greaterThan(0);
+
+        const { result: pairs1 }: { result: any; } = await server.inject({
+            method: 'post',
+            url: '/api/topic/get',
+            payload: { topic_id: topicId1 },
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(pairs1).to.be.object();
+        expect(pairs1.topic).to.equal(topic);
+        expect(pairs1.status).to.be.array();
+        expect(pairs1.status.find((f: any) => f.name == 'no_occupancy_since')).to.exist();
+
+        const topicId2 = storeMessage(topic, '{"humidity":43, "occupancy":1, "update":{"state":"available"}}');
+        expect(topicId2).to.be.greaterThan(0);
+        expect(topicId1).to.equal(topicId2);
+
+        const { result: pairs2 }: { result: any; } = await server.inject({
+            method: 'post',
+            url: '/api/topic/get',
+            payload: { topic_id: topicId1 },
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(pairs2).to.be.object();
+        expect(pairs2.topic).to.equal(topic);
+        expect(pairs2.status).to.be.array();
+        expect(pairs2.status.find((f: any) => f.name == 'no_occupancy_since')).to.not.exist();
+
+        const topicId3 = storeMessage(topic, '{"humidity":43, "occupancy":0, "update":{"state":"available"}}');
+        expect(topicId3).to.be.greaterThan(0);
+        expect(topicId1).to.equal(topicId3);
+
+        const { result: pairs3 }: { result: any; } = await server.inject({
+            method: 'post',
+            url: '/api/topic/get',
+            payload: { topic_id: topicId1 },
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(pairs3).to.be.object();
+        expect(pairs3.topic).to.equal(topic);
+        expect(pairs3.status).to.be.array();
+        expect(pairs3.status.find((f: any) => f.name == 'no_occupancy_since')).to.not.exist();
+    });
+
     test('storing the same message without duplication', async () => {
         const now = new Date();
         const start = subSeconds(now, 5);
 
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const key = randWord().toLowerCase();
         const message = { [key]: 36, "state_bottom": "OFF", "state_top": "OFF", "update": { "state": "available" } };
         const topicId1 = storeMessage(topic, JSON.stringify(message), start);
@@ -104,7 +162,7 @@ experiment('store and get mqtt messages', () => {
     });
 
     test('storing a mqtt message with invalid json', async () => {
-        const topic = `zigbee2mqtt/${randWord().toLowerCase()}`;
+        const topic = topicGenerate();
         const topicId = storeMessage(topic, 'this_is_not_json');
 
         expect(topicId).to.equal(0);

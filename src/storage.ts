@@ -97,6 +97,17 @@ export function cacheInit() {
     };
 }
 
+function cacheInvalidate(topicId: number | bigint) {
+    const manifestKey = `${topicId}-*`;
+    const manifest = <string[]>lruCache.get(manifestKey);
+    if (!manifest) return;
+
+    manifest.forEach((key) => {
+        lruCache.delete(key);
+    });
+    lruCache.delete(manifestKey);
+}
+
 export function cachePairsGet(topicId: number | bigint): { name: string, value: string | number, pairId: number; }[] {
     const manifest = <string[]>lruCache.get(`${topicId}-*`);
     if (!manifest) return [];
@@ -154,6 +165,8 @@ export function storeMessage(topic: string, jsonString: string, creationDate?: D
                 return topicId;
             }
             else if (lastMessage.count > 1) {
+                cacheInvalidate(topicId);
+
                 const lastJson = JSON.parse(lastMessage.jsonString);
                 Object.keys(lastJson).forEach((k) => {
                     storePair(topicId, 0, k, lastJson[k], lastMessage.created);
@@ -161,6 +174,8 @@ export function storeMessage(topic: string, jsonString: string, creationDate?: D
             }
         }
         lastMessages.set(topic, { count: 1, jsonString, created });
+
+        cacheInvalidate(topicId);
 
         try {
             const json = JSON.parse(jsonString);

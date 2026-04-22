@@ -10,8 +10,8 @@ const opMap = {
   gt: '>',
   inc: '>>',
   leq: '_=',
-  lgt: '_<',
-  llt: '_>',
+  lgt: '_>',
+  llt: '_<',
   lt: '<',
   neq: '!='
 };
