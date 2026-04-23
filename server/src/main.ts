@@ -49,7 +49,7 @@ const puddleInit = async () => {
 
     startScheduler();
 
-    const pluginDirs = (process.env.PLUGINS || 'wemo')
+    const pluginDirs = (process.env.PLUGINS || '')
         .split(',')
         .map(item => item.trim())
         .filter(Boolean);
