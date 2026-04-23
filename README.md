@@ -9,7 +9,7 @@ Developed for use with zigbee devices through [zigbee2mqtt](https://www.zigbee2m
 
 ## Features
 * Schedule and trigger automations based on mqtt topics, sun position (with [suncalc](https://github.com/mourner/suncalc)) or time
-* Allows conditionals (if/else) based on mqtt topics, sun position, time, etc...
+* Allows automations based on expressions (if/else) based on mqtt topics, sun position, time, etc... (with [Ohm](https://ohmjs.org/))
 * Provides an API for custom frontends or use the included web frontend built with [hapi](https://hapi.dev), [joi](https://joi.dev) and [Bootstrap](https://getbootstrap.com)
 * Stores messages in a [SQLite](https://www.sqlite.org) db for charting (with [Chart.js](https://www.chartjs.org/)) or automation conditions
 * Query past and present device states for automations
@@ -22,17 +22,28 @@ Be sure to setup a `puddle.env` and `secret.env` files in the root folder. See t
 
 The `secret.env` file sets a authorization phrase for adding users and resetting passwords. This can be disabled once a user account is created.
 
-To setup puddle, its db, and the web frontend run (note the different subdirectories):
+To setup puddle and its db:
 ```console
-[puddle_folder]$ npm install
-[puddle_folder]$ npm run migrate latest
-[puddle_webapp_folder]$ npm install
-[puddle_webapp_folder]$ npm run parcel:build
+[server]$ npm install
+[server]$ npm run migrate latest
 ```
 
-Puddle startup:
+To build and until this is more hashed out (plugins are new) you must run `npm install` for each plugin in `src/plugin/` (e.g., in `src/plugin/wemo/wemo-client`). Then to build everything: 
+
 ```console
-[puddle_folder]$ npm run prod
+[server]$ npm run build:all
+```
+
+There are other `npm` scripts to build the project in parts.
+
+To start puddle:
+```console
+[server]$ npm run start 
+```
+
+To run tests, make sure `secret.env` exists or some user tests will fail. You can copy `secret.env.sample` to do this. Then:
+```console
+[server]$ npm run test 
 ```
 
 The web frontend should now be running at `http://localhost:4000` (unless you've changed the default port).
@@ -65,6 +76,6 @@ Puddle is beta software and, along with this `README.md`, is a work in progress.
 Start the backend and web frontend in watch mode with:
 
 ```console
-[puddle_folder]$ npm run dev
-[puddle_webapp_folder]$ npm run parcel:watch
+[server]$ npm run dev
+[webapp]$ npm run parcel:watch
 ```
