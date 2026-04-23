@@ -9,3 +9,4 @@ puddle.sqlite
 puddle.sqlite-shm
 puddle.sqlite-wal
 secret.env
+devices.json
