@@ -2,7 +2,6 @@ import bootstrap = require('bootstrap');
 import { render } from 'mustache';
 import { autoResetModals, callApi } from './helper';
 import { getExpressions, upsertExpression, upsertConditional, Expression, getConditional, getExpression, deleteExpression, deleteConditional } from '../helpers/model_automations';
-import { conditionKind } from './formatters';
 
 import templateAutomationStep from 'bundle-text:../templates/card_automation_step.mustache';
 import templateElseSteps from 'bundle-text:../templates/li_else_steps.mustache';
@@ -104,7 +103,7 @@ function changeConditionalKind(kind: string) {
 }
 
 function renderAutomation() {
-    divAutomation.innerHTML = render(templateAutomationStep, { automations: getExpressions(), conditionKind }, { conditional_steps: templateSteps, else_steps: templateElseSteps });
+    divAutomation.innerHTML = render(templateAutomationStep, { automations: getExpressions() }, { conditional_steps: templateSteps, else_steps: templateElseSteps });
 }
 
 function saveAutomation() {

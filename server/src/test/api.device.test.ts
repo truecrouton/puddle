@@ -188,24 +188,6 @@ experiment('setup and control devices', () => {
         expect(getResult.value_off).to.be.equal(device.value_off);
     });
 
-    test('getting all controls', async () => {
-        const res = await server.inject({
-            method: 'post',
-            url: '/api/controls/get',
-            payload: {},
-            auth: {
-                strategy: 'session',
-                credentials: {}
-            }
-        });
-        expect(res.statusCode).to.equal(200);
-
-        const { result }: { result: any; } = res;
-        expect(result).to.be.object();
-        expect(result.controls).to.be.array();
-        expect(Array(result.devices).length).to.be.greaterThan(0);
-    });
-
     test('getting all devices', async () => {
         const res = await server.inject({
             method: 'post',

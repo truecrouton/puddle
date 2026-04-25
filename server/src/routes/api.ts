@@ -192,15 +192,15 @@ async function chartSetup(request: Request, h: ResponseToolkit): Promise<Respons
 async function controlsGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
     const rootDevices = <Device[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')').all();
 
+    const middleDevices = ['dimmable', 'positionable'];
+
     const devices = rootDevices.map((d) => {
         const value = cacheGet(d.topic_id, d.state_key ?? '');
 
         let state: string = 'unknown';
-        if (value != '') {
-            if (value === d.value_on) state = 'high';
-            else if (value === d.value_off) state = 'low';
-            else state = 'middle';
-        }
+        if (value == d.value_on) state = 'high';
+        else if (value == d.value_off) state = 'low';
+        else if (middleDevices.includes(d.kind) && !isNaN(Number(value))) state = 'middle';
 
         return { ...d, state };
     });

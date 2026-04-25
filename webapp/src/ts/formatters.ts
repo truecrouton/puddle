@@ -4,29 +4,6 @@ export const formatChecked = function () {
     };
 };
 
-export const conditionKind = function () {
-    return function (text, render) {
-        const kindMap = {
-            and: "&",
-            eq: "=",
-            or: "∥",
-            gt: ">",
-            gte: "≥",
-            lt: "<",
-            lte: "≤",
-            neq: "≠",
-            inc: "⋰",
-            dec: "⋱",
-            lgt: "Δ >",
-            llt: "Δ <",
-            leq: "Δ =",
-            lneq: "Δ ≠"
-        };
-        const kind = render(text);
-        return kindMap[kind];
-    };
-};
-
 export const kindIcon = function () {
     return function (text, render) {
         const iconMap = {

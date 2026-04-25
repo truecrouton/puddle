@@ -84,7 +84,7 @@ export function cacheGet(topicId: number | bigint, name: string): string | numbe
 export function cacheInit() {
     console.log('Loading cache with previously stored pairs');
     const latestPairStmt = db.prepare('SELECT MAX(created_at) FROM pairs WHERE topic_id=? AND is_object=0');
-    const pairsStmt = db.prepare('SELECT id as topic_id, name, value, created_at FROM pairs where topic_id=? AND created_at=? AND is_object=0 AND pair_id=0');
+    const pairsStmt = db.prepare('SELECT pair_id, topic_id, name, value, created_at FROM pairs where topic_id=? AND created_at=? AND is_object=0 AND pair_id=0');
 
     const topics = <Topic[]>db.prepare('SELECT id as topic_id, topic from topics').all();
     for (const topic of topics) {
