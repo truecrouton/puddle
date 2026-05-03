@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="h-100">
+<html lang="en" class="h-full">
 
 <head>
     <include src="./elements/head.html" locals='{
@@ -7,127 +7,145 @@
     }'></include>
 </head>
 
-<body class="d-flex flex-column h-100">
+<body class="flex flex-col h-full bg-base-100 text-base-content">
     <include src="./elements/navbar.html"></include>
 
-    <div class="container pt-4">
-        <h1 class="display-5 fw-bold">
-            <a class="text-decoration-none" href="/"><i class="bi bi-arrow-up-circle"></i></a>
-            Setup some devices
-        </h1>
-        <p class="col-12 fs-4">
-            Create one or many devices for various mqtt topics.
-        </p>
-    </div>
-
-    <div class="container" id="divDevices"></div>
-
-    <div class="modal fade" id="modalSettings" data-bs-backdrop="static" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="formSettings">
-                    <div class="modal-header">
-                        <div class="spinner-border text-primary me-2 d-none" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <h5 class="modal-title">Device Settings</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label for="selectTopic" class="form-label">Topic</label>
-                                <select id="selectTopic" class="form-select" required>
-                                    <option value="0" selected>Select Topic</option>
-                                </select>
-                            </div>
-                            <div class="col-md-7">
-                                <label for="inputName" class="form-label">Name</label>
-                                <input type="text" class="form-control" id="inputName" required>
-                            </div>
-                            <div class="col-md-5">
-                                <label for="selectKind" class="form-label">Type</label>
-                                <select id="selectKind" class="form-select" required>
-                                    <option value="" selected>Select Type</option>
-                                    <option value="controlling">Control</option>
-                                    <option value="dimmable">Dimmable</option>
-                                    <option value="informational">Informational</option>
-                                    <option value="positionable">Positionable</option>
-                                    <option value="toggleable">Toggleable</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="inputStateKey" class="form-label">State Key</label>
-                                <input type="text" class="form-control" id="inputStateKey">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="inputSetKey" class="form-label">Set Key</label>
-                                <input type="text" class="form-control" id="inputSetKey">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="inputSetSuffix" class="form-label">Set Topic Suffix</label>
-                                <input type="text" class="form-control" id="inputSetSuffix">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="inputValueOn" class="form-label">Value On</label>
-                                <input type="text" class="form-control" id="inputValueOn">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="inputValueOff" class="form-label">Value Off</label>
-                                <input type="text" class="form-control" id="inputValueOff">
-                            </div>
-                            <div class="col-12 d-none" id="divOtherStatus"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
-                    </div>
-                </form>
-            </div>
+    <main class="flex-grow">
+        <div class="container mx-auto pt-8 px-4">
+            <h1 class="text-5xl font-bold">
+                <a class="no-underline inline-block align-middle mr-2" href="/"><i class="bi bi-arrow-up-circle"></i></a>
+                <span class="align-middle">Setup some devices</span>
+            </h1>
+            <p class="w-full text-xl mt-4">
+                Create one or many devices for various mqtt topics.
+            </p>
         </div>
-    </div>
 
-    <div class="modal fade" id="modalStatus" data-bs-backdrop="static" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form id="formStatus">
-                    <div class="modal-header">
-                        <div class="spinner-border text-primary me-2 d-none" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <h5 class="modal-title">Device Status</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div class="container mx-auto px-4 mt-8" id="divDevices"></div>
+    </main>
+
+    <dialog id="modalSettings" class="modal">
+        <div class="modal-box max-w-3xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="font-bold text-lg">Device Settings</h3>
+            <form id="formSettings" class="mt-4">
+                <div class="flex items-center space-x-2 hidden mb-4" id="spinnerSettings">
+                    <span class="loading loading-spinner text-primary"></span>
+                    <span>Loading...</span>
+                </div>
+                <div class="alert alert-error pdl-error-modal hidden mb-4" role="alert"></div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-12">
+                        <label for="selectTopic" class="label">
+                            <span class="label-text">Topic</span>
+                        </label>
+                        <select id="selectTopic" class="select select-bordered w-full" required>
+                            <option value="0" selected>Select Topic</option>
+                        </select>
                     </div>
-                    <div class="modal-body">
-                        <div class="alert alert-danger pdl-error-modal d-none" role="alert"></div>
-                        <div class="row g-3">
-                            <div class="col-md-9">
-                                <label for="inputStatusKey" class="form-label">Status Key</label>
-                                <input type="text" class="form-control" id="inputStatusKey" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="selectStatusShown" class="form-label">Shown</label>
-                                <select id="selectStatusShown" class="form-select" required>
-                                    <option value="0" selected>No</option>
-                                    <option value="1">Yes</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label for="inputStatusName" class="form-label">Display Name</label>
-                                <input type="text" class="form-control" id="inputStatusName" required>
-                            </div>
-                        </div>
+                    <div class="md:col-span-7">
+                        <label for="inputName" class="label">
+                            <span class="label-text">Name</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputName" required>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save</button>
+                    <div class="md:col-span-5">
+                        <label for="selectKind" class="label">
+                            <span class="label-text">Type</span>
+                        </label>
+                        <select id="selectKind" class="select select-bordered w-full" required>
+                            <option value="" selected>Select Type</option>
+                            <option value="controlling">Control</option>
+                            <option value="dimmable">Dimmable</option>
+                            <option value="informational">Informational</option>
+                            <option value="positionable">Positionable</option>
+                            <option value="toggleable">Toggleable</option>
+                        </select>
                     </div>
-                </form>
-            </div>
+                    <div class="md:col-span-4">
+                        <label for="inputStateKey" class="label">
+                            <span class="label-text">State Key</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputStateKey">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="inputSetKey" class="label">
+                            <span class="label-text">Set Key</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputSetKey">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label for="inputSetSuffix" class="label">
+                            <span class="label-text">Set Topic Suffix</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputSetSuffix">
+                    </div>
+                    <div class="md:col-span-6">
+                        <label for="inputValueOn" class="label">
+                            <span class="label-text">Value On</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputValueOn">
+                    </div>
+                    <div class="md:col-span-6">
+                        <label for="inputValueOff" class="label">
+                            <span class="label-text">Value Off</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputValueOff">
+                    </div>
+                    <div class="md:col-span-12 hidden" id="divOtherStatus"></div>
+                </div>
+                <div class="modal-action">
+                    <button type="button" class="btn btn-ghost" onclick="modalSettings.close()">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
         </div>
-    </div>
+    </dialog>
+
+    <dialog id="modalStatus" class="modal">
+        <div class="modal-box max-w-3xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
+            <h3 class="font-bold text-lg">Device Status</h3>
+            <form id="formStatus" class="mt-4">
+                <div class="flex items-center space-x-2 hidden mb-4" id="spinnerStatus">
+                    <span class="loading loading-spinner text-primary"></span>
+                    <span>Loading...</span>
+                </div>
+                <div class="alert alert-error pdl-error-modal hidden mb-4" role="alert"></div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-9">
+                        <label for="inputStatusKey" class="label">
+                            <span class="label-text">Status Key</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputStatusKey" required>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label for="selectStatusShown" class="label">
+                            <span class="label-text">Shown</span>
+                        </label>
+                        <select id="selectStatusShown" class="select select-bordered w-full" required>
+                            <option value="0" selected>No</option>
+                            <option value="1">Yes</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-12">
+                        <label for="inputStatusName" class="label">
+                            <span class="label-text">Display Name</span>
+                        </label>
+                        <input type="text" class="input input-bordered w-full" id="inputStatusName" required>
+                    </div>
+                </div>
+                <div class="modal-action">
+                    <button type="button" class="btn btn-ghost" onclick="modalStatus.close()">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 
     <include src="./elements/footer.html"></include>
 </body>
