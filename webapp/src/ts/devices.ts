@@ -1,4 +1,3 @@
-import bootstrap = require('bootstrap');
 import { autoResetModals, callApi, sort } from './helper';
 import { formatChecked, kindIcon } from './formatters';
 
@@ -22,22 +21,80 @@ const inputValueOn = <HTMLInputElement>document.getElementById('inputValueOn');
 const selectKind = <HTMLSelectElement>document.getElementById('selectKind');
 const selectStatusShown = <HTMLSelectElement>document.getElementById('selectStatusShown');
 const selectTopic = <HTMLSelectElement>document.getElementById('selectTopic');
-const modalSettings = <HTMLElement>document.getElementById("modalSettings");
-const modalStatus = <HTMLElement>document.getElementById("modalStatus");
+const modalSettings = <HTMLDialogElement>document.getElementById("modalSettings");
+const modalStatus = <HTMLDialogElement>document.getElementById("modalStatus");
 
 function loadDevices() {
     callApi('/devices/get', {}).then((res: any) => {
         divDevices.innerHTML = render(templateDevices, { devices: sort(res.devices, 'name'), kindIcon });
+
+        const btnAddDevice = <HTMLElement>document.getElementById('btnAddDevice');
+        btnAddDevice?.addEventListener('click', () => {
+            showModalSettings(btnAddDevice);
+        });
+
+        divDevices.querySelectorAll('a[data-device-id]').forEach((a: HTMLElement) => a.addEventListener('click', () => {
+            showModalSettings(a);
+        }));
 
         let deviceId = Number(new URLSearchParams(window.location.search).get("device_id"));
         deviceId = isNaN(deviceId) ? 0 : deviceId;
         if (deviceId > 0) {
             const a = document.createElement('a');
             a.setAttribute('data-device-id', String(deviceId));
-            bootstrap.Modal.getOrCreateInstance(modalSettings).show(a);
+            showModalSettings(a);
             history.replaceState(null, '', 'devices.html');
         }
     });
+}
+
+async function showModalSettings(button: HTMLElement) {
+    const deviceId = button.getAttribute('data-device-id');
+    modalSettings.setAttribute('data-device-id', deviceId);
+
+    const topics = await callApi('/topics/get', {});
+    selectTopic.innerHTML = render(templateTopics, topics);
+
+    divOtherStatus.classList.add('hidden');
+
+    if (Number(deviceId) !== 0) {
+        const res: any = await callApi('/device/get', { device_id: deviceId });
+        inputName.value = res.name;
+        selectKind.value = res.kind;
+        inputSetKey.value = res.set_key;
+        selectTopic.value = res.topic_id;
+        inputStateKey.value = res.state_key;
+        inputSetSuffix.value = res.set_suffix;
+        inputValueOn.value = res.value_on;
+        inputValueOff.value = res.value_off;
+
+        if (res.status?.length > 0) {
+            const status = Object.assign([], res.status);
+            divOtherStatus.innerHTML = render(templateOtherState, { device_id: deviceId, status, formatChecked });
+            divOtherStatus.classList.remove('hidden');
+
+            divOtherStatus.querySelectorAll('tr[data-device-id]').forEach((tr: HTMLElement) => tr.addEventListener('click', () => {
+                modalSettings.close();
+                showModalStatus(tr);
+            }));
+        }
+    }
+    modalSettings.showModal();
+}
+
+function showModalStatus(button: HTMLElement) {
+    modalStatus.setAttribute('data-device-id', button.getAttribute('data-device-id'));
+    let statusId = Number(button.getAttribute('data-status-key-id'));
+    statusId = isNaN(statusId) ? 0 : statusId;
+
+    if (statusId > 0) {
+        // Not implemented in original
+    }
+    else {
+        inputStatusKey.value = button.getAttribute('data-status-key');
+        selectStatusShown.value = "0";
+    }
+    modalStatus.showModal();
 }
 
 autoResetModals();
@@ -59,7 +116,7 @@ formSettings.addEventListener('submit', (ev) => {
     };
 
     callApi('/device/setup', topic).then(() => {
-        bootstrap.Modal.getInstance(modalSettings).hide();
+        modalSettings.close();
         loadDevices();
     });
 });
@@ -78,63 +135,7 @@ formStatus.addEventListener('submit', (ev) => {
     callApi('/device/status/setup', status).then(() => {
         const a = document.createElement('a');
         a.setAttribute('data-device-id', status.device_id);
-        bootstrap.Modal.getInstance(modalStatus).hide();
-        bootstrap.Modal.getInstance(modalSettings).show(a);
+        modalStatus.close();
+        showModalSettings(a);
     });
-});
-
-modalSettings.addEventListener('show.bs.modal', async (ev) => {
-    const modalEvent = <bootstrap.Modal.Event>ev;
-    if (!modalEvent.relatedTarget) return;
-    const button = <HTMLElement>modalEvent.relatedTarget;
-
-    const deviceId = button.getAttribute('data-device-id');
-    modalSettings.setAttribute('data-device-id', deviceId);
-
-    const topics = await callApi('/topics/get', {});
-    selectTopic.innerHTML = render(templateTopics, topics);
-
-    divOtherStatus.classList.add('d-none');
-
-    if (Number(deviceId) === 0) return;
-
-    callApi('/device/get', { device_id: deviceId }).then((res: any) => {
-        inputName.value = res.name;
-        selectKind.value = res.kind;
-        inputSetKey.value = res.set_key;
-        selectTopic.value = res.topic_id;
-        inputStateKey.value = res.state_key;
-        inputSetSuffix.value = res.set_suffix;
-        inputValueOn.value = res.value_on;
-        inputValueOff.value = res.value_off;
-
-        if (res.status?.length > 0) {
-            const status = Object.assign([], res.status);
-            divOtherStatus.innerHTML = render(templateOtherState, { device_id: deviceId, status, formatChecked });
-            divOtherStatus.classList.remove('d-none');
-
-            divOtherStatus.querySelectorAll('a.stretched-link').forEach((a: HTMLElement) => a.addEventListener('click', (ev) => {
-                bootstrap.Modal.getInstance(modalSettings).hide();
-                bootstrap.Modal.getOrCreateInstance(modalStatus).show(a);
-            }));
-        }
-    });
-});
-
-modalStatus.addEventListener('show.bs.modal', async (ev) => {
-    const modalEvent = <bootstrap.Modal.Event>ev;
-    if (!modalEvent.relatedTarget) return;
-    const button = <HTMLElement>modalEvent.relatedTarget;
-
-    modalStatus.setAttribute('data-device-id', button.getAttribute('data-device-id'));
-    let statusId = Number(button.getAttribute('data-status-key-id'));
-    statusId = isNaN(statusId) ? 0 : statusId;
-
-    if (statusId > 0) {
-
-    }
-    else {
-        inputStatusKey.value = button.getAttribute('data-status-key');
-        selectStatusShown.value = "0";
-    }
 });

@@ -1,0 +1,8 @@
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /devices.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /webapp.7c490a4c.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /devices.3b5b8d6f.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /webapp.f8f3824c.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /webapp.8047c6c7.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /webapp.5debc04e.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /puddle.07b0e60e.svg HTTP/1.1" 200 -
+127.0.0.1 - - [03/May/2026 19:36:17] "GET /bootstrap-icons.dc6e4a26.woff2 HTTP/1.1" 200 -

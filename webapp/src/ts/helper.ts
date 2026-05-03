@@ -3,20 +3,20 @@ import { post } from "superagent";
 export function callApi(endpoint: string, query: any) {
     const host = `${window.location.protocol}//${window.location.host}`;
 
-    const modal = document.querySelector('.modal.show');
-    const modalSpinner = modal?.querySelector('.spinner-border');
-    modalSpinner?.classList.remove('d-none');
+    const modal = <HTMLDialogElement>document.querySelector('dialog[open]');
+    const modalSpinner = modal?.querySelector('.loading');
+    modalSpinner?.classList.remove('hidden');
     const modalAlert = modal?.querySelector('.pdl-error-modal');
     const pageAlert = document.querySelector('.pdl-error-page');
 
-    modalAlert?.classList.add('d-none');
-    pageAlert?.classList.add('d-none');
+    modalAlert?.classList.add('hidden');
+    if (pageAlert) pageAlert.classList.add('hidden');
 
     return new Promise((resolve) => {
         post(`${host}/api${endpoint}`)
             .send(query)
             .then((res) => {
-                modalSpinner?.classList.add('d-none');
+                modalSpinner?.classList.add('hidden');
                 resolve(res.body);
             })
             .catch((error) => {
@@ -24,32 +24,34 @@ export function callApi(endpoint: string, query: any) {
                     window.location.href = './login.html';
                 }
 
-                modalSpinner?.classList.add('d-none');
+                modalSpinner?.classList.add('hidden');
 
                 if (modalAlert) {
                     modalAlert.innerHTML = error.response.body?.message ?? 'An unknown error occurred.';
-                    modalAlert?.classList.remove('d-none');
+                    modalAlert?.classList.remove('hidden');
                 }
                 else if (pageAlert) {
                     pageAlert.innerHTML = error.response.body?.message ?? 'An unknown error occurred.';
-                    pageAlert?.classList.remove('d-none');
+                    pageAlert?.classList.remove('hidden');
                 }
             });
     });
 }
 
 export function autoResetModals() {
-    document.querySelectorAll('.modal').forEach((modal: HTMLElement) => modal.addEventListener('show.bs.modal', () => {
+    document.querySelectorAll('dialog').forEach((modal: HTMLDialogElement) => modal.addEventListener('close', () => {
         const alerts = modal.getElementsByClassName('pdl-error-modal');
-        Array.from(alerts).forEach((alert: HTMLElement) => alert.classList.add('d-none'));
+        Array.from(alerts).forEach((alert: HTMLElement) => alert.classList.add('hidden'));
 
-        const spinner = modal.querySelector('.spinner-border');
-        spinner?.classList.add('d-none');
+        const spinner = modal.querySelector('.loading');
+        spinner?.classList.add('hidden');
 
         const forms = modal.getElementsByTagName('form');
         Array.from(forms).forEach((form: HTMLFormElement) => {
-            form.reset();
-            form.classList.remove('was-validated');
+            if (form.getAttribute('method') !== 'dialog') {
+                form.reset();
+                form.classList.remove('was-validated');
+            }
         });
     }));
 }
