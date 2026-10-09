@@ -4,3 +4,4 @@
  */
 
 export * from './automation.generated';
+export * from './device.generated';

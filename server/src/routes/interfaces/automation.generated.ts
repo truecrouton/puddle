@@ -9,11 +9,13 @@ export interface AutomationDeletePayloadInterface {
 
 export interface AutomationExpressionInterface {
   conditional_expression_id?: number;
+  device_id?: number;
   expression?: string;
   id?: number;
   is_else_step?: boolean;
-  kind: 'if' | 'notify' | 'publish' | 'wait';
+  kind: 'if' | 'notify' | 'publish' | 'wait' | 'device';
   message?: string;
+  state?: number;
   topic_id?: number;
 }
 
@@ -21,20 +23,24 @@ export interface AutomationExpressionSetupPayloadInterface {
   automation_id: number;
   expressions: ({
     conditional_expression_id?: number;
+    device_id?: number;
     expression?: string;
     id?: number;
     is_else_step?: boolean;
-    kind: 'if' | 'notify' | 'publish' | 'wait';
+    kind: 'if' | 'notify' | 'publish' | 'wait' | 'device';
     message?: string;
     nested_expressions?: ({
       conditional_expression_id?: number;
+      device_id?: number;
       expression?: string;
       id?: number;
       is_else_step?: boolean;
-      kind: 'notify' | 'publish' | 'wait';
+      kind: 'notify' | 'publish' | 'wait' | 'device';
       message?: string;
+      state?: number;
       topic_id?: number;
     })[];
+    state?: number;
     topic_id?: number;
   })[];
 }

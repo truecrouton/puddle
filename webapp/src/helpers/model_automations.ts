@@ -1,11 +1,15 @@
 export interface Expression {
     expression_id: number;
-    kind: "if" | "notify" | "publish" | "wait";
+    kind: "if" | "notify" | "publish" | "wait" | "device";
+    kind_is_device?: boolean;
     kind_is_if?: boolean;
     kind_is_notify?: boolean;
     kind_is_publish?: boolean;
     kind_is_wait?: boolean;
     is_else_step?: boolean;
+    device_id?: number;
+    device_name?: string;
+    state?: number;
     topic_id?: number;
     topic?: string;
     message?: string;
@@ -37,7 +41,7 @@ export function deleteConditional(conditionalId: number) {
 export function getExpressions(savable: boolean = false) {
     if (!savable) return expressions;
 
-    const keysToSave = ["kind", "topic_id", "message", "nested_expressions", "expression", "is_else_step"];
+    const keysToSave = ["kind", "topic_id", "message", "nested_expressions", "expression", "is_else_step", "device_id", "state"];
     const valuesToDelete = [undefined, null];
 
     const allExprs = Object.assign([], expressions);
@@ -56,12 +60,13 @@ export function getExpressions(savable: boolean = false) {
                 const nexpr = Object.assign({}, e);
                 Object.keys(nexpr).forEach((key) => {
                     if (!keysToSave.includes(key)) delete nexpr[key];
-                    if (!nexpr[key]) delete nexpr[key];
+                    if (valuesToDelete.includes(nexpr[key])) delete nexpr[key];
                 });
                 return nexpr;
             })
         };
     });
+
 
     return exprs;
 }

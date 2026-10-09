@@ -74,6 +74,39 @@ function getTopicId(topic: string): number {
   return <number>db.prepare('SELECT id FROM topics WHERE topic=?').pluck().get(`${process.env.BASE_TOPIC}/${topic}`);
 }
 
+export function getTopicIds(expression: string): number[] {
+  const match = automationGrammar.match(expression);
+  if (match.failed()) {
+    throw new Error(match.message);
+  }
+
+  const semantics = automationGrammar.createSemantics();
+
+  semantics.addOperation<number[]>('getTopicIds()', {
+    ident(letter, alnum1, _, alnum2) {
+      const topicId = getTopicId(`${letter.sourceString}${alnum1.sourceString}`);
+      if (!topicId) throw new Error(`"${letter.sourceString}${alnum1.sourceString}" is not a valid topic.`);
+      return [topicId];
+    },
+    // 2. Recursively dig through everything else
+    _nonterminal(...children) {
+      return children.flatMap(c => c.getTopicIds());
+    },
+
+    // 3. Ignore leaf nodes (literals like "=")
+    _terminal() {
+      return [];
+    },
+
+    // 4. Handle Ohm's built-in repetition nodes (* and +)
+    _iter(...children) {
+      return children.flatMap(c => c.getTopicIds());
+    }
+  });
+
+  return semantics(match).getTopicIds();
+}
+
 export function evaluate(expression: string | undefined) {
   if (!expression || expression.length == 0) return false;
 

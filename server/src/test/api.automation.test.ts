@@ -8,7 +8,7 @@ import { storageInit, storeMessage } from "../storage";
 import { runAutomation } from "../automation";
 import { randAccessory, randVerb, randWord } from '@ngneat/falso';
 import { format } from 'date-fns';
-import { automationCreate, topicGenerate, factoryInit } from './helpers/factory';
+import { automationCreate, topicGenerate, factoryInit, deviceCreate } from './helpers/factory';
 import { AutomationExpressionSetupPayloadInterface, AutomationSetupPayloadInterface } from '../routes/interfaces';
 
 const lab = Lab.script();
@@ -101,8 +101,9 @@ experiment('setup and run automations', () => {
     });
 
     test('setup and get an automation', async () => {
-        const topic = topicGenerate();
-        const topicId = storeMessage(topic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
+        const topic = topicGenerate('');
+        const fullTopic = `zigbee2mqtt/${topic}`;
+        const topicId = storeMessage(fullTopic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
 
         const automationReq: AutomationSetupPayloadInterface = {
             id: 0,
@@ -132,7 +133,7 @@ experiment('setup and run automations', () => {
             automation_id: automationId,
             expressions: [{
                 kind: 'if',
-                expression: 'MONTH == 4 AND bedroom_shade_1.position == 75 AND bedroom_shade_2.position _>[>60] 50',
+                expression: `MONTH == 4 AND ${topic}.position == 75 AND ${topic}.position _>[>60] 50`,
                 conditional_expression_id: 0,
                 nested_expressions: [{
                     kind: 'publish',
@@ -186,8 +187,173 @@ experiment('setup and run automations', () => {
         const conditionalExpr = expression.nested_expressions[0];
         expect(conditionalExpr.id as number).to.be.greaterThan(0);
         expect(conditionalExpr.kind).to.equal('publish');
-        expect(conditionalExpr.topic).to.equal(topic);
+        expect(conditionalExpr.topic).to.equal(fullTopic);
         expect(conditionalExpr.is_else_step).to.equal(false);
+    });
+
+    test('setup and delete an automation', async () => {
+        const topic = topicGenerate('');
+        const topicId = storeMessage(`zigbee2mqtt/${topic}`, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
+
+        const automationReq: AutomationSetupPayloadInterface = {
+            id: 0,
+            name: `${randVerb()} ${randAccessory()}`,
+            trigger: 'time',
+            trigger_at: '03:00',
+
+        };
+        const automationRes = await server.inject({
+            method: 'post',
+            url: `/api/automation/setup`,
+            payload: automationReq,
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(automationRes.statusCode).to.equal(200);
+
+        const { result: baseAutomation }: { result: any; } = automationRes;
+        expect(baseAutomation).to.be.object();
+
+        const automationId = Number(baseAutomation.automation_id);
+        expect(automationId).to.be.greaterThan(0);
+
+        const expressions: AutomationExpressionSetupPayloadInterface = {
+            automation_id: automationId,
+            expressions: [{
+                kind: 'if',
+                expression: `MONTH == 4 AND ${topic}.position == 75 AND ${topic}.position _>[>60] 50`,
+                conditional_expression_id: 0,
+                nested_expressions: [{
+                    kind: 'publish',
+                    topic_id: topicId,
+                    message: '{"state":"ON"}',
+                    is_else_step: false
+                }]
+            }]
+        };
+        const res = await server.inject({
+            method: 'post',
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(res.statusCode).to.equal(200);
+
+        const { result }: { result: any; } = res;
+        expect(result).to.be.object();
+        expect(Number(result.automation_id)).to.be.greaterThan(0);
+        expect(result.automation_id).to.equal(automationId);
+
+        const getRes = await server.inject({
+            method: 'post',
+            url: `/api/automation/delete`,
+            payload: { automation_id: automationId },
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(getRes.statusCode).to.equal(200);
+    });
+
+    test('setup and get a device automation', async () => {
+        const topic = topicGenerate('');
+        const fullTopic = `zigbee2mqtt/${topic}`;
+        const topicId = storeMessage(fullTopic, '{"linkquality":156,"state_bottom":"OFF","state_top":"OFF","update":{"state":"available"}}');
+        const deviceId = await deviceCreate({
+            topic_id: topicId
+        });
+
+        const automationReq: AutomationSetupPayloadInterface = {
+            id: 0,
+            name: `${randVerb()} ${randAccessory()}`,
+            trigger: 'time',
+            trigger_at: '03:00',
+
+        };
+        const automationRes = await server.inject({
+            method: 'post',
+            url: `/api/automation/setup`,
+            payload: automationReq,
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(automationRes.statusCode).to.equal(200);
+
+        const { result: baseAutomation }: { result: any; } = automationRes;
+        expect(baseAutomation).to.be.object();
+
+        const automationId = Number(baseAutomation.automation_id);
+        expect(automationId).to.be.greaterThan(0);
+
+        const expressions: AutomationExpressionSetupPayloadInterface = {
+            automation_id: automationId,
+            expressions: [{
+                kind: 'if',
+                expression: `MONTH == 4 AND ${topic}.position == 75 AND ${topic}.position _>[>60] 50`,
+                conditional_expression_id: 0,
+                nested_expressions: [{
+                    kind: 'device',
+                    device_id: deviceId,
+                    state: 1,
+                    is_else_step: false
+                }]
+            }]
+        };
+        const res = await server.inject({
+            method: 'post',
+            url: `/api/automation/expressions/setup`,
+            payload: expressions,
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(res.statusCode).to.equal(200);
+
+        const { result }: { result: any; } = res;
+        expect(result).to.be.object();
+        expect(Number(result.automation_id)).to.be.greaterThan(0);
+        expect(result.automation_id).to.equal(automationId);
+
+        const getRes = await server.inject({
+            method: 'post',
+            url: `/api/automation/get`,
+            payload: { automation_id: automationId },
+            auth: {
+                strategy: 'session',
+                credentials: {}
+            }
+        });
+        expect(getRes.statusCode).to.equal(200);
+
+        const { result: automation }: { result: any; } = getRes;
+        expect(automation).to.be.object();
+        expect(automation.id).to.equal(automationId);
+        expect(automation.trigger).to.equal('time');
+        expect(automation.trigger_at).to.equal('03:00');
+        expect(automation.sequence).to.be.array();
+        expect(automation.sequence.length).to.equal(1);
+
+        const expression = automation.sequence[0];
+        expect(expression.id as number).to.be.greaterThan(0);
+        expect(expression.kind).to.equal('if');
+        expect(expression.nested_expressions).to.be.array();
+        expect(expression.nested_expressions.length).to.equal(1);
+
+        const conditionalExpr = expression.nested_expressions[0];
+        expect(conditionalExpr.id as number).to.be.greaterThan(0);
+        expect(conditionalExpr.kind).to.equal('device');
+        expect(conditionalExpr.is_else_step).to.equal(false);
+        expect(conditionalExpr.device_id).to.equal(deviceId);
+        expect(Number(conditionalExpr.state)).to.equal(1);
     });
 
     test('getting all automations', async () => {
@@ -270,7 +436,8 @@ experiment('setup and run automations', () => {
                 expression: `'${format(now, 'HH:mm')}' == time`,
                 conditional_expression_id: 0,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/stash_content", "payload": {"source":"sensor", "source_type":"camera", "topic":"garage", "content": {"racoons_detected":1}}}'
                 }]
             }]
         };
@@ -347,7 +514,8 @@ experiment('setup and run automations', () => {
                 kind: 'if',
                 expression: `'OFF' == ${topic}.state_bottom`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             },
             {
@@ -396,7 +564,8 @@ experiment('setup and run automations', () => {
                 kind: 'if',
                 expression: `"ON" == ${topic}.state_bottom`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',
@@ -499,7 +668,8 @@ experiment('setup and run automations', () => {
                 kind: 'if',
                 expression: `"ON" == ${topic}.state_bottm`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',

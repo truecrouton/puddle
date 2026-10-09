@@ -2,9 +2,12 @@ import { compareAsc, compareDesc, endOfDay, endOfMonth, format, startOfDay, addM
 import { connect } from "mqtt";
 import { getTimes } from 'suncalc';
 import { db, Automation, Topic, cacheGet } from "./storage";
-import { AutomationExpressionInterface } from './routes/interfaces';
+import { AutomationExpressionInterface, DeviceInterface } from './routes/interfaces';
 import { evaluate } from './expressions';
 import { setTimeout } from 'timers/promises';
+import { request, RequestOptions } from 'http';
+import { object } from 'joi';
+import { URL } from 'url';
 
 interface AutomationExpressions { automation_id: number, result: AutomationExpressionInterface[]; }
 
@@ -98,7 +101,7 @@ export function savedAutomations(): Automation[] {
 }
 
 export async function runAutomation(automationId: number): Promise<AutomationExpressionInterface[]> {
-    const exprs = <AutomationExpressionInterface[]>db.prepare('SELECT id, kind, expression, conditional_expression_id, is_else_step, topic_id, message FROM automation_expressions where automation_id=?').all(automationId);
+    const exprs = <AutomationExpressionInterface[]>db.prepare('SELECT id, kind, expression, conditional_expression_id, is_else_step, topic_id, message, device_id, state FROM automation_expressions where automation_id=?').all(automationId);
     const topicStmt = db.prepare('SELECT topic FROM topics where id=?');
 
     if (!exprs.length) return [];
@@ -113,40 +116,93 @@ export async function runAutomation(automationId: number): Promise<AutomationExp
         }
         executableSteps.push(expr);
 
-        switch (expr.kind) {
-            case 'notify':
-                break;
-            case 'publish':
-                const topic = <Topic>topicStmt.get(expr.topic_id);
-                let valuesMatch = false;
-                try {
-                    const result = JSON.parse(expr.message!);
-                    const isKeyValueObject =
-                        typeof result === 'object' &&
-                        result !== null &&
-                        !Array.isArray(result);
+        if (process.env.NODE_ENV == 'test') continue;
 
-                    if (isKeyValueObject) {
-                        const firstKey = Object.keys(result)[0];
-                        const currentValue = cacheGet(expr.topic_id!, firstKey);
-                        valuesMatch = result[firstKey] == currentValue;
-                    }
-                    else valuesMatch = false;
+        if (expr.kind == 'notify') {
+            const validEndpoints = ["/discuss_topic", "/stash_content"];
+            let messageObj: { host: string; payload: object; };
 
+            try {
+                if (typeof expr.message == 'string') messageObj = JSON.parse(expr.message);
+                else break;
+
+                const url = new URL(messageObj.host);
+
+                if (
+                    !validEndpoints.includes(url.pathname) ||
+                    typeof messageObj.payload !== 'object' ||
+                    typeof messageObj.host !== 'string'
+                ) {
+                    console.error('Invalid message structure');
+                    break;
                 }
-                catch (error) {
-                    console.error(expr.message, error);
-                    valuesMatch = false;
+
+                const reqOptions: RequestOptions = {
+                    hostname: url.hostname,
+                    port: url.port ? parseInt(url.port, 10) : (url.protocol === 'https:' ? 443 : 80),
+                    path: url.pathname,
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    timeout: 5000
+                };
+
+                const req = request(reqOptions, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => data += chunk);
+                    res.on('end', () => {
+                        console.log('Response:', res.statusCode, data);
+                    });
+                });
+
+                req.on('error', (e) => { console.error('Request error:', e); });
+
+                req.on('timeout', () => {
+                    req.destroy();
+                    console.error('Request timed out');
+                });
+
+                if (process.env.NODE_ENV != 'test') {
+                    req.write(JSON.stringify(messageObj.payload));
+                    req.end();
                 }
-                if (!valuesMatch && process.env.NODE_ENV != 'test') mqtt.publish(topic.topic, expr.message!);
+            } catch (error) {
+                console.error('Notification error:', expr.message, error);
                 break;
-            case 'wait':
-                //await setTimeout(50);
-                break;
-            default:
-                break;
+            }
         }
-    };
+        else if (expr.kind == 'device') {
+            const device = <DeviceInterface>db.prepare('SELECT id, kind, topic_id, set_key, state_key, set_suffix, value_on, value_off FROM devices where id=?').get(expr.device_id);
+            const topic = <Topic>topicStmt.get(device.topic_id);
+
+            const currentValue = cacheGet(device.topic_id, device.state_key);
+            if (expr.state != currentValue) {
+                let message;
+                switch (device.kind) {
+                    case "toggleable":
+                        message = { [device.set_key!]: expr.state! > 0 ? device.value_on : device.value_off };
+                        break;
+                    case "dimmable":
+                    case "positionable":
+                        message = { [device.set_key!]: expr.state };
+                        break;
+                }
+
+                const setTopic = [topic.topic, device.set_suffix].join('/');
+                mqtt.publish(setTopic, JSON.stringify(message));
+            }
+        }
+        else if (expr.kind == 'publish') {
+            const topic = <Topic>topicStmt.get(expr.topic_id);
+            try {
+                JSON.parse(expr.message!);
+            }
+            catch (error) {
+                console.error(expr.message, error);
+            }
+            mqtt.publish(topic.topic, expr.message!);
+        }
+        //else if (expr.kind == 'wait') await setTimeout(50);
+    }
 
     return executableSteps;
 }

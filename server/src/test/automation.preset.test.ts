@@ -48,7 +48,8 @@ experiment('run automations with preset conditions', () => {
                 kind: 'if',
                 expression: `date == "${format(today, 'yyyy-MM-dd')}"`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',
@@ -61,7 +62,8 @@ experiment('run automations with preset conditions', () => {
                 kind: 'if',
                 expression: `month == ${format(today, 'L')}`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };
@@ -117,7 +119,8 @@ experiment('run automations with preset conditions', () => {
                 kind: 'if',
                 expression: `${topicInc}.illuminance >> 77 AND ${topicDec}.illuminance << 55`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',
@@ -130,7 +133,8 @@ experiment('run automations with preset conditions', () => {
                 kind: 'if',
                 expression: `${topicInc}.illuminance << 22`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',
@@ -192,7 +196,8 @@ experiment('run automations with preset conditions', () => {
                 kind: 'if',
                 expression: `${topic2}.occupancy _>[>30] 0 AND ${topic2}.occupancy _=[<1] 0`,
                 nested_expressions: [{
-                    kind: 'notify'
+                    kind: 'notify',
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 },
                 {
                     kind: 'publish',
@@ -211,7 +216,8 @@ experiment('run automations with preset conditions', () => {
 
                 }, {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };

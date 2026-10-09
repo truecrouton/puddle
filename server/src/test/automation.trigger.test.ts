@@ -59,7 +59,8 @@ experiment('setup and run automations', () => {
                 },
                 {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };
@@ -118,7 +119,8 @@ experiment('setup and run automations', () => {
                 },
                 {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };
@@ -173,7 +175,8 @@ experiment('setup and run automations', () => {
                 },
                 {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };
@@ -227,7 +230,8 @@ experiment('setup and run automations', () => {
                 },
                 {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };
@@ -282,7 +286,8 @@ experiment('setup and run automations', () => {
                 },
                 {
                     kind: 'notify',
-                    is_else_step: true
+                    is_else_step: true,
+                    message: '{"host":"http://localhost:5050/discuss_topic", "payload": {"topic":"garage"}}'
                 }]
             }]
         };

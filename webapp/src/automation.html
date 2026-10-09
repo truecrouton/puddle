@@ -133,6 +133,7 @@
                                 <select id="selectExpressionKind" class="form-select">
                                     <option value="" selected>Select Type</option>
                                     <option value="if">If/Else</option>
+                                    <option value="device">Device</option>
                                     <option value="notify">Notify</option>
                                     <option value="publish">Publish</option>
                                     <option value="wait">Wait</option>
@@ -144,9 +145,21 @@
                                     <input type="text" class="form-control" id="inputExpressionIf">
                                 </div>
                             </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divExpressionDevice">
+                                <div class="col-12">
+                                    <label for="selectExpressionDevice" class="form-label">Device</label>
+                                    <select id="selectExpressionDevice" class="form-select">
+                                        <option value="" selected>Select Device</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="inputExpressionState" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="inputExpressionState">
+                                </div>
+                            </div>
                             <div class="col-12 row g-3 m-0 p-0" id="divExpressionPublish">
                                 <div class="col-12">
-                                    <label for="selectExpressionTopic" class="form-label">Trigger Topic</label>
+                                    <label for="selectExpressionTopic" class="form-label">Topic</label>
                                     <select id="selectExpressionTopic" class="form-select">
                                         <option value="" selected>Select Topic</option>
                                     </select>
@@ -154,6 +167,12 @@
                                 <div class="col-12">
                                     <label for="inputExpressionMessage" class="form-label">Message</label>
                                     <input type="text" class="form-control" id="inputExpressionMessage">
+                                </div>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divExpressionNotify">
+                                <div class="col-12">
+                                    <label for="textExpressionPayload" class="form-label">Payload</label>
+                                    <textarea class="form-control" id="textExpressionPayload" rows="4"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -186,10 +205,23 @@
                                 <label for="selectConditionalKind" class="form-label">Type</label>
                                 <select id="selectConditionalKind" class="form-select">
                                     <option value="" selected>Select Type</option>
+                                    <option value="device">Device</option>
                                     <option value="notify">Notify</option>
                                     <option value="publish">Publish</option>
                                     <option value="wait">Wait</option>
                                 </select>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divConditionalDevice">
+                                <div class="col-12">
+                                    <label for="selectConditionalDevice" class="form-label">Device</label>
+                                    <select id="selectConditionalDevice" class="form-select">
+                                        <option value="" selected>Select Device</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="inputConditionalState" class="form-label">State</label>
+                                    <input type="text" class="form-control" id="inputConditionalState">
+                                </div>
                             </div>
                             <div class="col-12 row g-3 m-0 p-0" id="divConditionalPublish">
                                 <div class="col-12">
@@ -201,6 +233,12 @@
                                 <div class="col-12">
                                     <label for="inputConditionalMessage" class="form-label">Message</label>
                                     <input type="text" class="form-control" id="inputConditionalMessage">
+                                </div>
+                            </div>
+                            <div class="col-12 row g-3 m-0 p-0" id="divConditionalNotify">
+                                <div class="col-12">
+                                    <label for="textConditionalPayload" class="form-label">Payload</label>
+                                    <textarea class="form-control" id="textConditionalPayload" rows="4"></textarea>
                                 </div>
                             </div>
                         </div>

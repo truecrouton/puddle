@@ -33,17 +33,6 @@ export interface Chart {
     key: string;
 }
 
-export interface Device {
-    device_id: number;
-    topic_id: number,
-    kind: "dimmable" | "informational" | "positionable" | "toggleable" | "unknown",
-    set_key: string | null,
-    state_key: string | null,
-    set_suffix: string | null,
-    value_on: string | null,
-    value_off: string | null;
-}
-
 export interface DeviceStatusKey {
     status_key_id: number;
     device_id: number;

@@ -2,7 +2,7 @@ import Joi from "joi";
 
 export const AutomationExpressionSchema = Joi.object({
   id: Joi.number().integer().min(0),
-  kind: Joi.string().valid("if", "notify", "publish", "wait").required(),
+  kind: Joi.string().valid("if", "notify", "publish", "wait", "device").required(),
   is_else_step: Joi.boolean(),
   expression: Joi.string().when('kind', {
     is: 'if', then: Joi.string().max(300).required().custom((value, helpers) => {
@@ -12,7 +12,9 @@ export const AutomationExpressionSchema = Joi.object({
   }),
   conditional_expression_id: Joi.number().when('kind', { is: 'else', then: Joi.number().integer().min(1).required() }),
   topic_id: Joi.number().when('kind', { is: 'publish', then: Joi.number().integer().min(1).required() }),
-  message: Joi.string().when('kind', { is: 'publish', then: Joi.string().max(100).required() })
+  message: Joi.string().when('kind', { is: ['publish', 'notify'], then: Joi.string().max(500).required() }),
+  device_id: Joi.number().when('kind', { is: 'device', then: Joi.number().integer().min(1).required() }),
+  state: Joi.number().when('kind', { is: 'device', then: Joi.number().integer().min(0).max(100).required() })
 });
 
 export const AutomationIdSchema = Joi.object({
@@ -37,7 +39,7 @@ export const AutomationExpressionSetupPayloadSchema = Joi.object({
   automation_id: Joi.number().integer().min(1).required(),
   expressions: Joi.array().items(AutomationExpressionSchema.keys({
     nested_expressions: Joi.array().items(AutomationExpressionSchema.keys({
-      kind: Joi.string().valid("notify", "publish", "wait").required()
+      kind: Joi.string().valid("notify", "publish", "wait", "device").required()
     }))
   })
   ).required()

@@ -1,6 +1,7 @@
 import * as Hapi from '@hapi/hapi';
 import * as Inert from '@hapi/inert';
 import * as Cookie from '@hapi/cookie';
+import { readFileSync } from 'fs';
 import { Request, Server } from "@hapi/hapi";
 import { routes } from './routes';
 import { validateSession } from "./storage";
@@ -8,10 +9,18 @@ import { validateSession } from "./storage";
 export let server: Server;
 
 export const init = async function (): Promise<Server> {
-    server = Hapi.server({
+    const options: Hapi.ServerOptions = {
         port: process.env.PUDDLE_PORT || 4000,
-        host: '0.0.0.0'
-    });
+        host: process.env.PUDDLE_PORT || '127.0.0.1'
+    };
+    if (process.env.TLS_CERT && process.env.TLS_KEY) {
+        options.tls = {
+            key: readFileSync(process.env.TLS_KEY),
+            cert: readFileSync(process.env.TLS_CERT)
+        };
+    }
+
+    server = Hapi.server(options);
 
     await server.register([
         Inert,

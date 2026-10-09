@@ -42,6 +42,8 @@ export async function deviceCreate(params: {}): Promise<number> {
         state_key: randWord().toLowerCase(),
         set_key: randWord().toLowerCase(),
         set_suffix: randVerb().toLowerCase().replace(' ', '_'),
+        value_on: 'ON',
+        value_off: 'OFF',
         ...params
     };
 

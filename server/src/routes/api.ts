@@ -3,7 +3,7 @@ import { badImplementation, badRequest } from "@hapi/boom";
 import Joi from "joi";
 import { connect } from "mqtt";
 import dotenv from 'dotenv';
-import { db, Automation, Device, Pair, Topic, AutomationStep, DeviceStatusKey, User, sqliteDate, Chart, cacheGet, cachePairsGet } from "../storage";
+import { db, Automation, Pair, Topic, AutomationStep, DeviceStatusKey, User, sqliteDate, Chart, cacheGet, cachePairsGet } from "../storage";
 import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from "../schedule";
 import { scheduledJobs } from "node-schedule";
 import { parseISO } from "date-fns";
@@ -12,21 +12,18 @@ import { celsiusToFahrenheit, hashPassword } from "../helper";
 import { puddlePathRoot } from "../path-anchor";
 import { randomBytes } from "crypto";
 import { AutomationDeletePayloadSchema, AutomationExpressionSetupPayloadSchema, AutomationGetPayloadSchema, AutomationRunPayloadSchema, AutomationSetupPayloadSchema, AutomationsGetPayloadSchema } from "./schemas/automation.schema";
-import { AutomationGetPayloadInterface, AutomationRunPayloadInterface, AutomationDeletePayloadInterface, AutomationExpressionSetupPayloadInterface, AutomationExpressionInterface, AutomationIdInterface } from './interfaces';
+import { AutomationGetPayloadInterface, AutomationRunPayloadInterface, AutomationDeletePayloadInterface, AutomationExpressionSetupPayloadInterface, AutomationExpressionInterface, AutomationIdInterface, DeviceInterface } from './interfaces';
+import { getTopicIds } from "../expressions";
+import { DeviceGetPayloadSchema, DeviceSetPayloadSchema, DeviceSetupPayloadSchema, DevicesGetPayloadSchema, DeviceStatusGetPayloadSchema, DeviceStatusSetupPayloadSchema } from "./schemas/device.schema";
 
 const mqtt = connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
 
 async function automationDelete(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
     const { automation_id: automationId } = <AutomationDeletePayloadInterface>request.payload;
 
-    const steps = <AutomationStep[]>db.prepare('SELECT id AS step_id from automation_steps where automation_id=?').all(automationId);
-
-    const conditionStmt = db.prepare('DELETE FROM automation_conditions WHERE step_id=?');
     db.transaction(() => {
-        steps.forEach(s => {
-            conditionStmt.run(s.step_id);
-        });
-        db.prepare('DELETE FROM automation_steps WHERE automation_id=?').run(automationId);
+        db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(automationId);
+        db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(automationId);
         db.prepare('DELETE FROM automations WHERE id=?').run(automationId);
     })();
 
@@ -45,9 +42,9 @@ async function automationGet(request: Request, h: ResponseToolkit): Promise<Resp
 
     if (!payload.with_details) return h.response(automation);
 
-    const expressions = <Expression[]>db.prepare('SELECT automation_expressions.id, kind, expression, is_else_step, topic_id, topic, message FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id WHERE conditional_expression_id=0 AND automation_id=?').all(automationId);
+    const expressions = <Expression[]>db.prepare('SELECT automation_expressions.id, automation_expressions.kind, expression, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=0 AND automation_id=?').all(automationId);
 
-    const conditionalExprsStmt = db.prepare('SELECT automation_expressions.id, kind, is_else_step, topic_id, topic, message FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id WHERE conditional_expression_id=? AND automation_id=?');
+    const conditionalExprsStmt = db.prepare('SELECT automation_expressions.id, automation_expressions.kind, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=? AND automation_id=?');
 
     const sequence = expressions.map((expr) => {
         const conditionalSteps = (<Expression[]>conditionalExprsStmt.all(expr.id, automationId)).map((cStep) => ({ ...cStep, is_else_step: Boolean(cStep.is_else_step) }));
@@ -100,11 +97,29 @@ async function automationExpressionSetup(request: Request, h: ResponseToolkit): 
     let automationId = payload.automation_id;
     type Expression = AutomationExpressionSetupPayloadInterface['expressions'][number];
 
+    const stepStmt = db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const topicStmt = db.prepare('INSERT INTO automation_topics (automation_id, topic_id) VALUES (?, ?)');
+
     function storeExpression(expression: Expression, automationId: number, parentExpressionId: number) {
         const isElseStep = expression.is_else_step ? 1 : 0;
-        const stepRes = db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?)').run(automationId, expression.kind, expression.expression, parentExpressionId, expression.topic_id, expression.message, isElseStep);
+        const stepRes = stepStmt.run(automationId, expression.kind, expression.expression, parentExpressionId, expression.topic_id, expression.message, expression.device_id, expression.state, isElseStep);
 
         const insertedStepId = <number>stepRes.lastInsertRowid;
+
+        if (expression.kind == 'if' && typeof expression.expression == 'string') {
+            try {
+                const topicIds = getTopicIds(expression.expression);
+                topicIds.forEach((topicId) => topicStmt.run(automationId, topicId));
+            }
+            catch (error: unknown) {
+                if (error instanceof Error) {
+                    throw badRequest(error.message);
+                }
+                else {
+                    badRequest('An unexpected error occurred.');
+                }
+            }
+        }
 
         if (expression.nested_expressions?.length && !parentExpressionId) expression.nested_expressions.forEach((nestedExpression: any) => storeExpression(nestedExpression, automationId, insertedStepId));
 
@@ -113,44 +128,9 @@ async function automationExpressionSetup(request: Request, h: ResponseToolkit): 
 
     db.transaction(() => {
         db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(automationId);
+        db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(automationId);
         payload.expressions?.forEach((expr) => {
             storeExpression(expr, automationId, 0);
-        });
-    })();
-
-    return h.response({ automation_id: automationId });
-}
-
-async function automationStepsSetup(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const payload: any = request.payload;
-    let automationId = payload.automation_id;
-
-    function storeStep(step: any, automationId: number, parentStepId: number) {
-        const isElseStep = step.is_else_step ? 1 : 0;
-        const stepRes = db.prepare('INSERT INTO automation_steps (automation_id, kind, conditional_step_id, is_else_step, topic_id, message) VALUES(?, ?, ?, ?, ?, ?)').run(automationId, step.kind, parentStepId, isElseStep, step.topic_id, step.message);
-
-        const insertedStepId = <number>stepRes.lastInsertRowid;
-
-        if (step.steps?.length && !parentStepId) step.steps.forEach((nestedStep: any) => storeStep(nestedStep, automationId, insertedStepId));
-
-        return insertedStepId;
-    }
-
-    db.transaction(() => {
-        const existingAutomations = db.prepare('SELECT automation_steps.id as automation_step_id, automation_conditions.id as automation_condition_id FROM automation_steps LEFT JOIN automation_conditions ON automation_conditions.step_id=automation_steps.id WHERE automation_steps.automation_id=?').all(automationId);
-        existingAutomations.forEach((row: any) => {
-            db.prepare('DELETE FROM automation_steps where id=?').run(row.automation_step_id);
-            db.prepare('DELETE FROM automation_conditions where id=?').run(row.automation_condition_id);
-        });
-
-        const conditionStmt = db.prepare('INSERT INTO automation_conditions (step_id, kind, left_operand_kind, left_preset, left_topic_id, left_topic_key, left_value, right_operand_kind, right_preset, right_topic_id, right_topic_key, right_value) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-
-        payload.steps?.forEach((step: any) => {
-            const stepId = storeStep(step, automationId, 0);
-
-            step.conditions?.forEach((condition: any) => {
-                conditionStmt.run(stepId, condition.kind, condition.left_operand_kind, condition.left_preset, condition.left_topic_id, condition.left_topic_key, condition.left_value, condition.right_operand_kind, condition.right_preset, condition.right_topic_id, condition.right_topic_key, condition.right_value);
-            });
         });
     })();
 
@@ -190,7 +170,7 @@ async function chartSetup(request: Request, h: ResponseToolkit): Promise<Respons
 }
 
 async function controlsGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const rootDevices = <Device[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')').all();
+    const rootDevices = <DeviceInterface[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')').all();
 
     const middleDevices = ['dimmable', 'positionable'];
 
@@ -213,7 +193,7 @@ async function controlsGet(request: Request, h: ResponseToolkit): Promise<Respon
 async function deviceGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
     const payload: any = request.payload;
     const deviceId = payload.device_id;
-    const device = <Device>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, set_suffix, state_key, value_on, value_off FROM devices WHERE id=?').get(payload.device_id);
+    const device = <DeviceInterface>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, set_suffix, state_key, value_on, value_off FROM devices WHERE id=?').get(payload.device_id);
 
     if (!device) return h.response({});
 
@@ -240,7 +220,7 @@ async function deviceGet(request: Request, h: ResponseToolkit): Promise<Response
 }
 
 async function devicesGet(request: Request, h: ResponseToolkit): Promise<ResponseObject> {
-    const devices = <Device[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key FROM devices').all();
+    const devices = <DeviceInterface[]>db.prepare('SELECT id as device_id, topic_id, name, kind, set_key FROM devices').all();
 
     return h.response({ devices });
 }
@@ -382,12 +362,12 @@ async function topicsGet(request: Request, h: ResponseToolkit): Promise<Response
 
     const deviceStmt = db.prepare('SELECT id as device_id, name, kind FROM devices where topic_id=?');
     const automationStmt = db.prepare('SELECT id as automation_id, name, trigger FROM automations WHERE trigger=\'topic\' AND topic_id=?');
-    const stepStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_steps LEFT JOIN automations on automations.id=automation_steps.automation_id WHERE automation_steps.topic_id=?');
-    const conditionStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_conditions LEFT JOIN automation_steps on automation_steps.id=automation_conditions.step_id LEFT JOIN automations ON automations.id=automation_steps.automation_id WHERE automation_conditions.left_topic_id=? OR automation_conditions.right_topic_id=?');
+    const expressionStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id WHERE automation_expressions.topic_id=?');
+    const conditionalStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
     const topics = baseTopics.map((t) => {
         const usedIn = new Map();
-        stepStmt.all(t.topic_id).forEach((s: any) => usedIn.set(s.automation_id, s));
-        conditionStmt.all(t.topic_id, t.topic_id).forEach((c: any) => usedIn.set(c.automation_id, c));
+        expressionStmt.all(t.topic_id).forEach((e: any) => usedIn.set(e.automation_id, e));
+        conditionalStmt.all(t.topic_id).forEach((c: any) => usedIn.set(c.automation_id, c));
 
         return {
             ...t,
@@ -519,40 +499,6 @@ export const routesApi: ServerRoute[] = [
     },
     {
         method: "POST",
-        path: "/api/automation/steps/setup",
-        handler: automationStepsSetup,
-        options: {
-            validate: {
-                payload: Joi.object({
-                    automation_id: Joi.number().integer().min(1).required(),
-                    steps: Joi.array().items(
-                        Joi.object({
-                            kind: Joi.string().valid("else", "if", "notify", "publish", "wait").required(),
-                            topic_id: Joi.when('kind', { is: 'publish', then: Joi.number().integer().min(1).required() }),
-                            message: Joi.when('kind', { is: 'publish', then: Joi.string().max(100).required() }),
-                            conditions: Joi.array().items(Joi.object({
-                                kind: Joi.string().valid("and", "eq", "or", "gt", "gte", "lt", "lte", "neq", "inc", "dec", 'lgt', 'llt', 'leq', 'lneq').required(),
-                                left_operand_kind: Joi.string().valid("preset", "topic", "value").required(),
-                                left_preset: Joi.when('left_operand_kind', { is: 'preset', then: Joi.string().valid("date", "time", "month", "day", "season_northern", "season_southern", "sun_position").required() }),
-                                left_topic_id: Joi.when('left_operand_kind', { is: 'topic', then: Joi.number().integer().min(1).required() }),
-                                left_topic_key: Joi.when('left_operand_kind', { is: 'topic', then: Joi.string().max(100).required() }),
-                                left_value: Joi.when('left_operand_kind', { is: 'value', then: Joi.alternatives().try(Joi.string().min(1).max(100), Joi.number()).required() }),
-                                right_operand_kind: Joi.string().valid("preset", "topic", "value").required(),
-                                right_preset: Joi.when('right_operand_kind', { is: 'preset', then: Joi.string().valid("date", "time", "month", "day", "season_northern", "season_southern", "sun_position").required() }),
-                                right_topic_id: Joi.when('right_operand_kind', { is: 'topic', then: Joi.number().integer().min(1).required() }),
-                                right_topic_key: Joi.when('right_operand_kind', { is: 'topic', then: Joi.string().max(100).required() }),
-                                right_value: Joi.when('right_operand_kind', { is: 'value', then: Joi.any().required() })
-                            }).when(Joi.object({ kind: Joi.string().valid('lgt', 'llt', 'leq', 'lneq') }).unknown(), { then: Joi.object({ right_value: Joi.string().pattern(/^\d{1,5}\s*,\s*[><]\s*\d{1,5}$/).trim() }), otherwise: { right_value: Joi.alternatives(Joi.string().min(1).max(100), Joi.number()) } })),
-                            steps: Joi.array().items(Joi.link('#step')),
-                            is_else_step: Joi.boolean()
-                        }).id('step')
-                    )
-                })
-            }
-        }
-    },
-    {
-        method: "POST",
         path: "/api/automations/get",
         options: {
             handler: automationsGet,
@@ -627,9 +573,7 @@ export const routesApi: ServerRoute[] = [
         handler: deviceGet,
         options: {
             validate: {
-                payload: Joi.object({
-                    device_id: Joi.number().integer().min(1).required()
-                })
+                payload: DeviceGetPayloadSchema
             }
         }
     },
@@ -639,10 +583,7 @@ export const routesApi: ServerRoute[] = [
         handler: deviceSet,
         options: {
             validate: {
-                payload: Joi.object({
-                    device_id: Joi.number().integer().min(1).required(),
-                    state: Joi.number().min(0).max(100).required()
-                })
+                payload: DeviceSetPayloadSchema
             }
         }
     },
@@ -652,17 +593,7 @@ export const routesApi: ServerRoute[] = [
         handler: deviceSetup,
         options: {
             validate: {
-                payload: Joi.object({
-                    device_id: Joi.number().integer().min(0).required(),
-                    topic_id: Joi.number().integer().min(1).required(),
-                    kind: Joi.string().valid("controlling", "dimmable", "informational", "positionable", "toggleable").required(),
-                    name: Joi.string().max(100).required(),
-                    set_key: Joi.string().token().max(100).empty(''),
-                    state_key: Joi.string().token().max(100).required(),
-                    set_suffix: Joi.string().token().max(100).empty(''),
-                    value_off: Joi.alternatives().try(Joi.number(), Joi.string().token().max(100).empty('')),
-                    value_on: Joi.alternatives().try(Joi.number(), Joi.string().token().max(100).empty(''))
-                })
+                payload: DeviceSetupPayloadSchema
             }
         }
     },
@@ -672,9 +603,7 @@ export const routesApi: ServerRoute[] = [
         handler: deviceStatusGet,
         options: {
             validate: {
-                payload: Joi.object({
-                    device_id: Joi.number().integer().min(1).required()
-                })
+                payload: DeviceStatusGetPayloadSchema
             }
         }
     },
@@ -684,13 +613,7 @@ export const routesApi: ServerRoute[] = [
         handler: deviceStatusSetup,
         options: {
             validate: {
-                payload: Joi.object({
-                    status_key_id: Joi.number().integer().min(0).required(),
-                    device_id: Joi.number().integer().min(1).required(),
-                    name: Joi.string().max(100).required(),
-                    status_key: Joi.string().token().max(100).required(),
-                    is_shown: Joi.boolean().required(),
-                })
+                payload: DeviceStatusSetupPayloadSchema
             }
         }
     },
@@ -700,7 +623,7 @@ export const routesApi: ServerRoute[] = [
         handler: devicesGet,
         options: {
             validate: {
-                payload: Joi.object().valid({}).required()
+                payload: DevicesGetPayloadSchema
             }
         }
     },

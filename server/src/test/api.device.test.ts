@@ -145,8 +145,8 @@ experiment('setup and control devices', () => {
             state_key: randWord().toLowerCase(),
             set_key: randWord().toLowerCase(),
             set_suffix: randVerb().toLowerCase().replace(' ', '_'),
-            value_on: 100,
-            value_off: 0,
+            value_on: '100',
+            value_off: '0',
         };
         const res = await server.inject({
             method: 'post',
@@ -184,8 +184,8 @@ experiment('setup and control devices', () => {
         expect(getResult.state_key).to.be.equal(device.state_key);
         expect(getResult.set_key).to.be.equal(device.set_key);
         expect(getResult.set_suffix).to.be.equal(device.set_suffix);
-        expect(getResult.value_on).to.be.equal(device.value_on);
-        expect(getResult.value_off).to.be.equal(device.value_off);
+        expect(String(getResult.value_on)).to.be.equal(device.value_on);
+        expect(String(getResult.value_off)).to.be.equal(device.value_off);
     });
 
     test('getting all devices', async () => {

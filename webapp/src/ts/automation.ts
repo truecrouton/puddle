@@ -1,18 +1,23 @@
 import bootstrap = require('bootstrap');
 import { render } from 'mustache';
-import { autoResetModals, callApi } from './helper';
+import { autoResetModals, callApi, sort } from './helper';
 import { getExpressions, upsertExpression, upsertConditional, Expression, getConditional, getExpression, deleteExpression, deleteConditional } from '../helpers/model_automations';
 
 import templateAutomationStep from 'bundle-text:../templates/card_automation_step.mustache';
 import templateElseSteps from 'bundle-text:../templates/li_else_steps.mustache';
 import templateSteps from 'bundle-text:../templates/li_steps.mustache';
+import templateDevices from 'bundle-text:../templates/option_devices.mustache';
 import templateTopics from 'bundle-text:../templates/option_topics.mustache';
 
 const buttonAutomationDelete = <HTMLElement>document.getElementById('buttonAutomationDelete');
 const buttonExpressionDelete = <HTMLElement>document.getElementById('buttonExpressionDelete');
 const buttonConditionalDelete = <HTMLElement>document.getElementById('buttonConditionalDelete');
+const divExpressionDevice = <HTMLElement>document.getElementById('divExpressionDevice');
 const divExpressionIf = <HTMLElement>document.getElementById('divExpressionIf');
+const divExpressionNotify = <HTMLElement>document.getElementById('divExpressionNotify');
 const divExpressionPublish = <HTMLElement>document.getElementById('divExpressionPublish');
+const divConditionalDevice = <HTMLElement>document.getElementById('divConditionalDevice');
+const divConditionalNotify = <HTMLElement>document.getElementById('divConditionalNotify');
 const divConditionalPublish = <HTMLElement>document.getElementById('divConditionalPublish');
 const divAutomation = <HTMLElement>document.getElementById('divAutomation');
 const formExpressionEdit = <HTMLFormElement>document.getElementById('formExpressionEdit');
@@ -20,10 +25,12 @@ const formSettings = <HTMLFormElement>document.getElementById('formSettings');
 const formExpression = <HTMLFormElement>document.getElementById('formExpression');
 const formConditional = <HTMLFormElement>document.getElementById('formConditional');
 const inputName = <HTMLInputElement>document.getElementById('inputName');
-const inputExpressionMessage = <HTMLInputElement>document.getElementById('inputExpressionMessage');
 const inputConditionalMessage = <HTMLInputElement>document.getElementById('inputConditionalMessage');
+const inputConditionalState = <HTMLInputElement>document.getElementById('inputConditionalState');
 const inputExpression = <HTMLInputElement>document.getElementById('inputExpression');
 const inputExpressionIf = <HTMLInputElement>document.getElementById('inputExpressionIf');
+const inputExpressionMessage = <HTMLInputElement>document.getElementById('inputExpressionMessage');
+const inputExpressionState = <HTMLInputElement>document.getElementById('inputExpressionState');
 const inputTriggerKey = <HTMLInputElement>document.getElementById('inputTriggerKey');
 const inputTriggerTime = <HTMLInputElement>document.getElementById('inputTriggerTime');
 const inputTriggerValue = <HTMLInputElement>document.getElementById('inputTriggerValue');
@@ -31,15 +38,19 @@ const modalExpressionEdit = <HTMLElement>document.getElementById("modalExpressio
 const modalSettings = <HTMLElement>document.getElementById("modalSettings");
 const modalExpression = <HTMLElement>document.getElementById("modalExpression");
 const modalConditional = <HTMLElement>document.getElementById("modalConditional");
-const selectExpressionKind = <HTMLSelectElement>document.getElementById('selectExpressionKind');
 const selectConditionalKind = <HTMLSelectElement>document.getElementById('selectConditionalKind');
-const selectExpressionTopic = <HTMLSelectElement>document.getElementById('selectExpressionTopic');
+const selectConditionalDevice = <HTMLSelectElement>document.getElementById('selectConditionalDevice');
 const selectConditionalTopic = <HTMLSelectElement>document.getElementById('selectConditionalTopic');
+const selectExpressionDevice = <HTMLSelectElement>document.getElementById('selectExpressionDevice');
+const selectExpressionKind = <HTMLSelectElement>document.getElementById('selectExpressionKind');
+const selectExpressionTopic = <HTMLSelectElement>document.getElementById('selectExpressionTopic');
 const selectTriggerPosition = <HTMLSelectElement>document.getElementById('selectTriggerPosition');
 const selectTriggerTopic = <HTMLSelectElement>document.getElementById('selectTriggerTopic');
 const selectTriggerType = <HTMLSelectElement>document.getElementById('selectTriggerType');
 const selectUserControlShown = <HTMLSelectElement>document.getElementById('selectUserControlShown');
 const strongName = <HTMLElement>document.getElementById('strongName');
+const textConditionalPayload = <HTMLInputElement>document.getElementById('textConditionalPayload');
+const textExpressionPayload = <HTMLInputElement>document.getElementById('textExpressionPayload');
 
 let automationId = Number(new URLSearchParams(window.location.search).get("automation_id"));
 automationId = isNaN(automationId) ? 0 : automationId;
@@ -80,8 +91,10 @@ function changeTriggerType(triggerType: string = "") {
 }
 
 function changeExpressionKind(kind: string) {
+    divExpressionDevice.classList.add('d-none');
     divExpressionIf.classList.add('d-none');
     divExpressionPublish.classList.add('d-none');
+    divExpressionNotify.classList.add('d-none');
 
     switch (kind) {
         case "publish":
@@ -90,15 +103,30 @@ function changeExpressionKind(kind: string) {
         case "if":
             divExpressionIf.classList.remove('d-none');
             break;
+        case "notify":
+            divExpressionNotify.classList.remove('d-none');
+            break;
+        case "device":
+            divExpressionDevice.classList.remove('d-none');
+            break;
     }
 }
 
 function changeConditionalKind(kind: string) {
-    if (kind === 'publish') {
-        divConditionalPublish.classList.remove('d-none');
-    }
-    else {
-        divConditionalPublish.classList.add('d-none');
+    divConditionalDevice.classList.add('d-none');
+    divConditionalNotify.classList.add('d-none');
+    divConditionalPublish.classList.add('d-none');
+
+    switch (kind) {
+        case "publish":
+            divConditionalPublish.classList.remove('d-none');
+            break;
+        case "notify":
+            divConditionalNotify.classList.remove('d-none');
+            break;
+        case "device":
+            divConditionalDevice.classList.remove('d-none');
+            break;
     }
 }
 
@@ -185,10 +213,20 @@ formExpression.addEventListener('submit', (ev) => {
                 expression: inputExpressionIf.value
             };
             break;
+        case 'device':
+            newValues = {
+                kind: "device",
+                kind_is_device: true,
+                device_id: Number(selectExpressionDevice.value),
+                device_name: selectExpressionDevice.selectedOptions[0].text,
+                state: Number(inputExpressionState.value)
+            };
+            break;
         case 'notify':
             newValues = {
                 kind: "notify",
-                kind_is_notify: true
+                kind_is_notify: true,
+                message: textExpressionPayload.value
             };
             break;
         case 'publish':
@@ -244,10 +282,20 @@ formConditional.addEventListener('submit', (ev) => {
     };
 
     switch (kind) {
+        case 'device':
+            automation = {
+                kind: "device",
+                kind_is_device: true,
+                device_id: Number(selectConditionalDevice.value),
+                device_name: selectConditionalDevice.selectedOptions[0].text,
+                state: Number(inputConditionalState.value)
+            };
+            break;
         case 'notify':
             automation = {
                 kind: "notify",
-                kind_is_notify: true
+                kind_is_notify: true,
+                message: textConditionalPayload.value
             };
             break;
         case 'publish':
@@ -332,13 +380,21 @@ modalExpression.addEventListener('show.bs.modal', async (ev) => {
     modalExpression.setAttribute('data-expression-id', String(automationStepId));
     modalExpression.setAttribute('data-is-else-step', button.getAttribute('data-is-else-step') === "1" ? "1" : "0");
 
+    divExpressionDevice.classList.add('d-none');
+    divExpressionNotify.classList.add('d-none');
     divExpressionPublish.classList.add('d-none');
     divExpressionIf.classList.add('d-none');
     selectExpressionKind.disabled = automationStepId > 0;
     buttonExpressionDelete.classList.add('d-none');
 
-    const topics = await callApi('/topics/get', {});
-    selectExpressionTopic.innerHTML = render(templateTopics, topics);
+    await Promise.all([
+        callApi('/topics/get', {}).then((res: any) => {
+            selectExpressionTopic.innerHTML = render(templateTopics, { topics: sort(res.topics, 'topic') });
+        }),
+        callApi('/devices/get', {}).then((res: any) => {
+            selectExpressionDevice.innerHTML = render(templateDevices, { devices: sort(res.devices, 'name') });
+        })
+    ]);
 
     if (automationStepId > 0) {
         buttonExpressionDelete.classList.remove('d-none');
@@ -347,7 +403,10 @@ modalExpression.addEventListener('show.bs.modal', async (ev) => {
 
         selectExpressionKind.value = expr.kind;
         selectExpressionTopic.value = String(expr.topic_id);
+        selectExpressionDevice.value = String(expr.device_id);
+        inputExpressionState.value = String(expr.state);
         inputExpressionMessage.value = expr.message;
+        textExpressionPayload.value = expr.message;
         inputExpressionIf.value = expr.expression;
 
         changeExpressionKind(expr.kind);
@@ -361,8 +420,6 @@ modalExpressionEdit.addEventListener('show.bs.modal', async (ev) => {
 
     const expressionId = button.getAttribute('data-expression-id');
     modalExpressionEdit.setAttribute('data-expression-id', expressionId);
-
-    //const topics = await callApi('/topics/get', {});
 
     const expr = getExpression(Number(expressionId));
     if (expr) {
@@ -379,11 +436,19 @@ modalConditional.addEventListener('show.bs.modal', async (ev) => {
     modalConditional.setAttribute('data-expression-id', automationStepId);
     modalConditional.setAttribute('data-is-else-step', button.getAttribute('data-is-else-step') === "1" ? "1" : "0");
 
+    divConditionalDevice.classList.add('d-none');
+    divConditionalNotify.classList.add('d-none');
     divConditionalPublish.classList.add('d-none');
     buttonConditionalDelete.classList.add('d-none');
 
-    const topics = await callApi('/topics/get', {});
-    selectConditionalTopic.innerHTML = render(templateTopics, topics);
+    await Promise.all([
+        callApi('/topics/get', {}).then((res: any) => {
+            selectConditionalTopic.innerHTML = render(templateTopics, { topics: sort(res.topics, 'topic') });
+        }),
+        callApi('/devices/get', {}).then((res: any) => {
+            selectConditionalDevice.innerHTML = render(templateDevices, { devices: sort(res.devices, 'name') });
+        })
+    ]);
 
     const conditionalStepId = Number(button.getAttribute('data-conditional-step-id'));
     modalConditional.setAttribute('data-conditional-step-id', String(conditionalStepId));
@@ -396,7 +461,10 @@ modalConditional.addEventListener('show.bs.modal', async (ev) => {
 
         selectConditionalKind.value = step.kind;
         selectConditionalTopic.value = String(step.topic_id);
+        selectConditionalDevice.value = String(step.device_id);
+        inputConditionalState.value = String(step.state);
         inputConditionalMessage.value = step.message;
+        textConditionalPayload.value = step.message;
 
         changeConditionalKind(step.kind);
     }

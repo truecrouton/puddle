@@ -56,8 +56,8 @@ experiment('setup and get control', () => {
             state_key: stateKey,
             set_key: randWord().toLowerCase(),
             set_suffix: randVerb().toLowerCase().replace(' ', '_'),
-            value_on: 100,
-            value_off: 0,
+            value_on: '100',
+            value_off: '0',
         });
         expect(Number(deviceId)).to.be.greaterThan(0);
 
@@ -76,9 +76,9 @@ experiment('setup and get control', () => {
         expect(result1).to.be.object();
         expect(result1.controls).to.be.array();
 
-        const control1 = result1.controls.find((c: any) => c.topic_id == topicId1);
+        const control1 = result1.controls.find((c: any) => c.device_id == deviceId);
         expect(control1).to.be.object();
-        expect(control1.device_id).to.be.equal(deviceId);
+        expect(control1.device_id).to.equal(deviceId);
         expect(control1.state).to.equal('middle');
 
         const topicId2 = storeMessage(topic, `{"linkquality":114,"${stateKey}":"0","state":"OPEN"}`);
@@ -96,7 +96,7 @@ experiment('setup and get control', () => {
         expect(result2).to.be.object();
         expect(result2.controls).to.be.array();
 
-        const control2 = result2.controls.find((c: any) => c.topic_id == topicId2);
+        const control2 = result2.controls.find((c: any) => c.device_id == deviceId);
         expect(control2).to.be.object();
         expect(control2.device_id).to.be.equal(deviceId);
         expect(control2.state).to.equal('low');
@@ -116,7 +116,7 @@ experiment('setup and get control', () => {
         expect(result3).to.be.object();
         expect(result3.controls).to.be.array();
 
-        const control3 = result3.controls.find((c: any) => c.topic_id == topicId2);
+        const control3 = result3.controls.find((c: any) => c.device_id == deviceId);
         expect(control3).to.be.object();
         expect(control3.device_id).to.be.equal(deviceId);
         expect(control3.state).to.equal('high');
@@ -153,9 +153,8 @@ experiment('setup and get control', () => {
         expect(result1).to.be.object();
         expect(result1.controls).to.be.array();
 
-        const control1 = result1.controls.find((c: any) => c.topic_id == topicId1);
+        const control1 = result1.controls.find((c: any) => c.device_id == deviceId);
         expect(control1).to.be.object();
-        expect(control1.device_id).to.be.equal(deviceId);
         expect(control1.state).to.equal('low');
 
         const topicId2 = storeMessage(topic, `{"linkquality":156,"${stateKey}":"ON","state_top":"OFF","update":{"state":"available"}}`);
@@ -173,9 +172,8 @@ experiment('setup and get control', () => {
         expect(result2).to.be.object();
         expect(result2.controls).to.be.array();
 
-        const control2 = result2.controls.find((c: any) => c.topic_id == topicId2);
+        const control2 = result2.controls.find((c: any) => c.device_id == deviceId);
         expect(control2).to.be.object();
-        expect(control2.device_id).to.be.equal(deviceId);
         expect(control2.state).to.equal('high');
 
         const topicId3 = storeMessage(topic, `{"linkquality":156,"${stateKey}":"55","state_top":"OFF","update":{"state":"available"}}`);
@@ -193,7 +191,7 @@ experiment('setup and get control', () => {
         expect(result3).to.be.object();
         expect(result3.controls).to.be.array();
 
-        const control3 = result3.controls.find((c: any) => c.topic_id == topicId2);
+        const control3 = result3.controls.find((c: any) => c.device_id == deviceId);
         expect(control3).to.be.object();
         expect(control3.device_id).to.be.equal(deviceId);
         expect(control3.state).to.equal('unknown');
