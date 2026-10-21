@@ -1,3 +1,23 @@
+export const deviceStepLabel = function () {
+    return function (text, render) {
+        const actionMap = {
+            positionable: 'position',
+            toggleable: 'toggle',
+            dimmable: 'dim'
+        };
+
+        const state = render(text);
+        return actionMap[state];
+    };
+};
+
+export const deviceToggleLabel = function () {
+    return function (text, render) {
+        const state = render(text);
+        return Number(state) > 0 ? 'ON' : 'OFF';
+    };
+};
+
 export const formatChecked = function () {
     return function (text, render) {
         return ["1", "true"].includes(render(text)) ? '<i class="bi bi-check2-circle"></i>' : '<i class="bi bi-circle"></i>';

@@ -9,6 +9,8 @@ export interface Expression {
     is_else_step?: boolean;
     device_id?: number;
     device_name?: string;
+    device_kind?: string;
+    toggleable?: boolean;
     state?: number;
     topic_id?: number;
     topic?: string;

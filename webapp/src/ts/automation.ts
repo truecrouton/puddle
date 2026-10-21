@@ -8,6 +8,7 @@ import templateElseSteps from 'bundle-text:../templates/li_else_steps.mustache';
 import templateSteps from 'bundle-text:../templates/li_steps.mustache';
 import templateDevices from 'bundle-text:../templates/option_devices.mustache';
 import templateTopics from 'bundle-text:../templates/option_topics.mustache';
+import { deviceStepLabel, deviceToggleLabel } from './formatters';
 
 const buttonAutomationDelete = <HTMLElement>document.getElementById('buttonAutomationDelete');
 const buttonExpressionDelete = <HTMLElement>document.getElementById('buttonExpressionDelete');
@@ -131,7 +132,7 @@ function changeConditionalKind(kind: string) {
 }
 
 function renderAutomation() {
-    divAutomation.innerHTML = render(templateAutomationStep, { automations: getExpressions() }, { conditional_steps: templateSteps, else_steps: templateElseSteps });
+    divAutomation.innerHTML = render(templateAutomationStep, { automations: getExpressions(), deviceStepLabel, deviceToggleLabel }, { conditional_steps: templateSteps, else_steps: templateElseSteps });
 }
 
 function saveAutomation() {
@@ -152,10 +153,12 @@ if (automationId > 0) {
                 ...expr,
                 automation_id: 0,
                 [`kind_is_${expr.kind}`]: true,
+                toggleable: expr.device_kind == 'toggleable',
                 nested_expressions: expr.nested_expressions.map((expr) => ({
                     ...expr,
                     expression_id: expr.id,
-                    [`kind_is_${expr.kind}`]: true
+                    [`kind_is_${expr.kind}`]: true,
+                    toggleable: expr.device_kind == 'toggleable',
                 })),
                 else_steps: []
             };
@@ -214,11 +217,14 @@ formExpression.addEventListener('submit', (ev) => {
             };
             break;
         case 'device':
+            const deviceKind = selectExpressionDevice.selectedOptions[0].getAttribute('data-device-kind');
             newValues = {
                 kind: "device",
                 kind_is_device: true,
                 device_id: Number(selectExpressionDevice.value),
                 device_name: selectExpressionDevice.selectedOptions[0].text,
+                device_kind: deviceKind,
+                toggleable: deviceKind == 'toggleable',
                 state: Number(inputExpressionState.value)
             };
             break;
@@ -283,11 +289,14 @@ formConditional.addEventListener('submit', (ev) => {
 
     switch (kind) {
         case 'device':
+            const deviceKind = selectConditionalDevice.selectedOptions[0].getAttribute('data-device-kind');
             automation = {
                 kind: "device",
                 kind_is_device: true,
                 device_id: Number(selectConditionalDevice.value),
                 device_name: selectConditionalDevice.selectedOptions[0].text,
+                device_kind: deviceKind,
+                toggleable: deviceKind == 'toggleable',
                 state: Number(inputConditionalState.value)
             };
             break;

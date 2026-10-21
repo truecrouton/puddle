@@ -1,0 +1,427 @@
+import { GraphQLResolveInfo } from 'graphql';
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
+export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
+/** All built-in and custom scalars, mapped to their actual values */
+export type Scalars = {
+  ID: { input: string; output: string; }
+  String: { input: string; output: string; }
+  Boolean: { input: boolean; output: boolean; }
+  Int: { input: number; output: number; }
+  Float: { input: number; output: number; }
+};
+
+export type Automation = {
+  __typename?: 'Automation';
+  expressions: Array<Expression>;
+  id: Scalars['Int']['output'];
+  isControlShown?: Maybe<Scalars['Boolean']['output']>;
+  name: Scalars['String']['output'];
+  position?: Maybe<Scalars['String']['output']>;
+  topicId?: Maybe<Scalars['Int']['output']>;
+  trigger: Scalars['String']['output'];
+  triggerAt?: Maybe<Scalars['String']['output']>;
+  triggerKey?: Maybe<Scalars['String']['output']>;
+  triggerValue?: Maybe<Scalars['String']['output']>;
+};
+
+export type Chart = {
+  __typename?: 'Chart';
+  id: Scalars['Int']['output'];
+  key: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  topicId: Scalars['Int']['output'];
+};
+
+export type Control = {
+  __typename?: 'Control';
+  deviceId: Scalars['Int']['output'];
+  kind: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  setKey: Scalars['String']['output'];
+  state: Scalars['String']['output'];
+  stateKey: Scalars['String']['output'];
+  topicId: Scalars['Int']['output'];
+  valueOff: Scalars['String']['output'];
+  valueOn: Scalars['String']['output'];
+};
+
+export type Device = {
+  __typename?: 'Device';
+  id: Scalars['Int']['output'];
+  kind: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  setKey?: Maybe<Scalars['String']['output']>;
+  setSuffix?: Maybe<Scalars['String']['output']>;
+  stateKey?: Maybe<Scalars['String']['output']>;
+  topic?: Maybe<Topic>;
+  topicId: Scalars['Int']['output'];
+  valueOff?: Maybe<Scalars['String']['output']>;
+  valueOn?: Maybe<Scalars['String']['output']>;
+};
+
+export type Expression = {
+  __typename?: 'Expression';
+  conditionalExpressionId?: Maybe<Scalars['Int']['output']>;
+  deviceId?: Maybe<Scalars['Int']['output']>;
+  deviceKind?: Maybe<Scalars['String']['output']>;
+  deviceName?: Maybe<Scalars['String']['output']>;
+  expression?: Maybe<Scalars['String']['output']>;
+  id: Scalars['Int']['output'];
+  isElseStep: Scalars['Boolean']['output'];
+  kind: Scalars['String']['output'];
+  message?: Maybe<Scalars['String']['output']>;
+  state?: Maybe<Scalars['String']['output']>;
+  topic?: Maybe<Scalars['String']['output']>;
+  topicId?: Maybe<Scalars['Int']['output']>;
+};
+
+export type Favorite = {
+  __typename?: 'Favorite';
+  name: Scalars['String']['output'];
+  state: Scalars['String']['output'];
+  stateKey: Scalars['String']['output'];
+  topicId: Scalars['Int']['output'];
+};
+
+export type Mutation = {
+  __typename?: 'Mutation';
+  setDevice: Scalars['Boolean']['output'];
+  signIn: Scalars['Boolean']['output'];
+  signOut: Scalars['Boolean']['output'];
+  signUp: Scalars['Boolean']['output'];
+  upsertDevice: Device;
+  upsertTopic: Topic;
+};
+
+
+export type MutationSetDeviceArgs = {
+  input: SetDeviceInput;
+};
+
+
+export type MutationSignInArgs = {
+  input: SignInInput;
+};
+
+
+export type MutationSignUpArgs = {
+  input: SignUpInput;
+};
+
+
+export type MutationUpsertDeviceArgs = {
+  input: UpsertDeviceInput;
+};
+
+
+export type MutationUpsertTopicArgs = {
+  input: UpsertTopicInput;
+};
+
+export type Query = {
+  __typename?: 'Query';
+  automation?: Maybe<Automation>;
+  automations: Array<Automation>;
+  charts: Array<Chart>;
+  controls: Array<Control>;
+  device?: Maybe<Device>;
+  devices: Array<Device>;
+  favorites: Array<Favorite>;
+  topics: Array<Topic>;
+};
+
+
+export type QueryAutomationArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
+export type QueryDeviceArgs = {
+  id: Scalars['Int']['input'];
+};
+
+export type SetDeviceInput = {
+  deviceId: Scalars['Int']['input'];
+  state: Scalars['String']['input'];
+};
+
+export type SignInInput = {
+  password: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+};
+
+export type SignUpInput = {
+  authPhrase: Scalars['String']['input'];
+  isAdmin: Scalars['Boolean']['input'];
+  name: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+};
+
+export type Topic = {
+  __typename?: 'Topic';
+  automations: Array<Automation>;
+  devices: Array<Device>;
+  id: Scalars['Int']['output'];
+  topic: Scalars['String']['output'];
+  usedInAutomations: Array<Automation>;
+};
+
+export type UpsertDeviceInput = {
+  id: Scalars['Int']['input'];
+  kind: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  setKey?: InputMaybe<Scalars['String']['input']>;
+  setSuffix?: InputMaybe<Scalars['String']['input']>;
+  stateKey?: InputMaybe<Scalars['String']['input']>;
+  topicId: Scalars['Int']['input'];
+  valueOff?: InputMaybe<Scalars['String']['input']>;
+  valueOn?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpsertTopicInput = {
+  id: Scalars['Int']['input'];
+  topic: Scalars['String']['input'];
+};
+
+export type User = {
+  __typename?: 'User';
+  id: Scalars['Int']['output'];
+  isAdmin: Scalars['Boolean']['output'];
+  name: Scalars['String']['output'];
+  password: Scalars['String']['output'];
+  username: Scalars['String']['output'];
+};
+
+
+
+export type ResolverTypeWrapper<T> = Promise<T> | T;
+
+
+export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
+  resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
+};
+export type Resolver<TResult, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> = ResolverFn<TResult, TParent, TContext, TArgs> | ResolverWithResolve<TResult, TParent, TContext, TArgs>;
+
+export type ResolverFn<TResult, TParent, TContext, TArgs> = (
+  parent: TParent,
+  args: TArgs,
+  context: TContext,
+  info: GraphQLResolveInfo
+) => Promise<TResult> | TResult;
+
+export type SubscriptionSubscribeFn<TResult, TParent, TContext, TArgs> = (
+  parent: TParent,
+  args: TArgs,
+  context: TContext,
+  info: GraphQLResolveInfo
+) => AsyncIterable<TResult> | Promise<AsyncIterable<TResult>>;
+
+export type SubscriptionResolveFn<TResult, TParent, TContext, TArgs> = (
+  parent: TParent,
+  args: TArgs,
+  context: TContext,
+  info: GraphQLResolveInfo
+) => TResult | Promise<TResult>;
+
+export interface SubscriptionSubscriberObject<TResult, TKey extends string, TParent, TContext, TArgs> {
+  subscribe: SubscriptionSubscribeFn<{ [key in TKey]: TResult }, TParent, TContext, TArgs>;
+  resolve?: SubscriptionResolveFn<TResult, { [key in TKey]: TResult }, TContext, TArgs>;
+}
+
+export interface SubscriptionResolverObject<TResult, TParent, TContext, TArgs> {
+  subscribe: SubscriptionSubscribeFn<any, TParent, TContext, TArgs>;
+  resolve: SubscriptionResolveFn<TResult, any, TContext, TArgs>;
+}
+
+export type SubscriptionObject<TResult, TKey extends string, TParent, TContext, TArgs> =
+  | SubscriptionSubscriberObject<TResult, TKey, TParent, TContext, TArgs>
+  | SubscriptionResolverObject<TResult, TParent, TContext, TArgs>;
+
+export type SubscriptionResolver<TResult, TKey extends string, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> =
+  | ((...args: any[]) => SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>)
+  | SubscriptionObject<TResult, TKey, TParent, TContext, TArgs>;
+
+export type TypeResolveFn<TTypes, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>> = (
+  parent: TParent,
+  context: TContext,
+  info: GraphQLResolveInfo
+) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
+
+export type IsTypeOfResolverFn<T = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
+
+export type NextResolverFn<T> = () => Promise<T>;
+
+export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>, TArgs = Record<PropertyKey, never>> = (
+  next: NextResolverFn<TResult>,
+  parent: TParent,
+  args: TArgs,
+  context: TContext,
+  info: GraphQLResolveInfo
+) => TResult | Promise<TResult>;
+
+
+
+
+
+/** Mapping between all available schema types and the resolvers types */
+export type ResolversTypes = {
+  Automation: ResolverTypeWrapper<Automation>;
+  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
+  Chart: ResolverTypeWrapper<Chart>;
+  Control: ResolverTypeWrapper<Control>;
+  Device: ResolverTypeWrapper<Device>;
+  Expression: ResolverTypeWrapper<Expression>;
+  Favorite: ResolverTypeWrapper<Favorite>;
+  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
+  Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
+  Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
+  SetDeviceInput: SetDeviceInput;
+  SignInInput: SignInInput;
+  SignUpInput: SignUpInput;
+  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Topic: ResolverTypeWrapper<Topic>;
+  UpsertDeviceInput: UpsertDeviceInput;
+  UpsertTopicInput: UpsertTopicInput;
+  User: ResolverTypeWrapper<User>;
+};
+
+/** Mapping between all available schema types and the resolvers parents */
+export type ResolversParentTypes = {
+  Automation: Automation;
+  Boolean: Scalars['Boolean']['output'];
+  Chart: Chart;
+  Control: Control;
+  Device: Device;
+  Expression: Expression;
+  Favorite: Favorite;
+  Int: Scalars['Int']['output'];
+  Mutation: Record<PropertyKey, never>;
+  Query: Record<PropertyKey, never>;
+  SetDeviceInput: SetDeviceInput;
+  SignInInput: SignInInput;
+  SignUpInput: SignUpInput;
+  String: Scalars['String']['output'];
+  Topic: Topic;
+  UpsertDeviceInput: UpsertDeviceInput;
+  UpsertTopicInput: UpsertTopicInput;
+  User: User;
+};
+
+export type AutomationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Automation'] = ResolversParentTypes['Automation']> = {
+  expressions?: Resolver<Array<ResolversTypes['Expression']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isControlShown?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  position?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  topicId?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  trigger?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  triggerAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  triggerKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  triggerValue?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type ChartResolvers<ContextType = any, ParentType extends ResolversParentTypes['Chart'] = ResolversParentTypes['Chart']> = {
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type ControlResolvers<ContextType = any, ParentType extends ResolversParentTypes['Control'] = ResolversParentTypes['Control']> = {
+  deviceId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  setKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  stateKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  valueOff?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  valueOn?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type DeviceResolvers<ContextType = any, ParentType extends ResolversParentTypes['Device'] = ResolversParentTypes['Device']> = {
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  setKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  setSuffix?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  stateKey?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  topic?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType>;
+  topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  valueOff?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  valueOn?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type ExpressionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Expression'] = ResolversParentTypes['Expression']> = {
+  conditionalExpressionId?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  deviceId?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  deviceKind?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  deviceName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  expression?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isElseStep?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  message?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  state?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  topic?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  topicId?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+};
+
+export type FavoriteResolvers<ContextType = any, ParentType extends ResolversParentTypes['Favorite'] = ResolversParentTypes['Favorite']> = {
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  stateKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+};
+
+export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
+  setDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDeviceArgs, 'input'>>;
+  signIn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'input'>>;
+  signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  signUp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
+  upsertDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationUpsertDeviceArgs, 'input'>>;
+  upsertTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationUpsertTopicArgs, 'input'>>;
+};
+
+export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
+  automation?: Resolver<Maybe<ResolversTypes['Automation']>, ParentType, ContextType, RequireFields<QueryAutomationArgs, 'id'>>;
+  automations?: Resolver<Array<ResolversTypes['Automation']>, ParentType, ContextType>;
+  charts?: Resolver<Array<ResolversTypes['Chart']>, ParentType, ContextType>;
+  controls?: Resolver<Array<ResolversTypes['Control']>, ParentType, ContextType>;
+  device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceArgs, 'id'>>;
+  devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
+  favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType>;
+  topics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType>;
+};
+
+export type TopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = {
+  automations?: Resolver<Array<ResolversTypes['Automation']>, ParentType, ContextType>;
+  devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  topic?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  usedInAutomations?: Resolver<Array<ResolversTypes['Automation']>, ParentType, ContextType>;
+};
+
+export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isAdmin?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  password?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  username?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type Resolvers<ContextType = any> = {
+  Automation?: AutomationResolvers<ContextType>;
+  Chart?: ChartResolvers<ContextType>;
+  Control?: ControlResolvers<ContextType>;
+  Device?: DeviceResolvers<ContextType>;
+  Expression?: ExpressionResolvers<ContextType>;
+  Favorite?: FavoriteResolvers<ContextType>;
+  Mutation?: MutationResolvers<ContextType>;
+  Query?: QueryResolvers<ContextType>;
+  Topic?: TopicResolvers<ContextType>;
+  User?: UserResolvers<ContextType>;
+};
+

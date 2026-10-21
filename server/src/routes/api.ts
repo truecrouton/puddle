@@ -42,9 +42,9 @@ async function automationGet(request: Request, h: ResponseToolkit): Promise<Resp
 
     if (!payload.with_details) return h.response(automation);
 
-    const expressions = <Expression[]>db.prepare('SELECT automation_expressions.id, automation_expressions.kind, expression, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=0 AND automation_id=?').all(automationId);
+    const expressions = <Expression[]>db.prepare('SELECT automation_expressions.id, automation_expressions.kind, expression, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, devices.kind as device_kind, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=0 AND automation_id=?').all(automationId);
 
-    const conditionalExprsStmt = db.prepare('SELECT automation_expressions.id, automation_expressions.kind, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=? AND automation_id=?');
+    const conditionalExprsStmt = db.prepare('SELECT automation_expressions.id, automation_expressions.kind, is_else_step, automation_expressions.topic_id, topic, message, device_id, devices.name as device_name, devices.kind as device_kind, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE conditional_expression_id=? AND automation_id=?');
 
     const sequence = expressions.map((expr) => {
         const conditionalSteps = (<Expression[]>conditionalExprsStmt.all(expr.id, automationId)).map((cStep) => ({ ...cStep, is_else_step: Boolean(cStep.is_else_step) }));
@@ -362,11 +362,11 @@ async function topicsGet(request: Request, h: ResponseToolkit): Promise<Response
 
     const deviceStmt = db.prepare('SELECT id as device_id, name, kind FROM devices where topic_id=?');
     const automationStmt = db.prepare('SELECT id as automation_id, name, trigger FROM automations WHERE trigger=\'topic\' AND topic_id=?');
-    const expressionStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id WHERE automation_expressions.topic_id=?');
+    const expressionStmt = db.prepare('SELECT automation_id, automations.name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
     const conditionalStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
     const topics = baseTopics.map((t) => {
         const usedIn = new Map();
-        expressionStmt.all(t.topic_id).forEach((e: any) => usedIn.set(e.automation_id, e));
+        expressionStmt.all(t.topic_id, t.topic_id).forEach((e: any) => usedIn.set(e.automation_id, e));
         conditionalStmt.all(t.topic_id).forEach((c: any) => usedIn.set(c.automation_id, c));
 
         return {
