@@ -1,6 +1,6 @@
 import { BatteryCharging, Sun, ThermometerSun, UserRoundGroup, WavesVertical, Wifi } from "lucide-react";
 import { ReactNode } from "react";
-import { Chart } from "@/generated/resolvers-types";
+import { Chart } from 'puddle-graphql';
 
 const iconMap: Record<string, ReactNode> = {
     temperature: <ThermometerSun className="w-5 h-5 mr-2" />,

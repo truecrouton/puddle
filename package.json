@@ -1,0 +1,14 @@
+{
+  "name": "puddle",
+  "private": true,
+  "workspaces": [
+    "graphql",
+    "server",
+    "nextjs"
+  ],
+  "scripts": {
+    "codegen": "npm run codegen --workspace=graphql",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:webapp": "npm run dev --workspace=nextjs"
+  }
+}

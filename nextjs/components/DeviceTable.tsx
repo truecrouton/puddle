@@ -1,15 +1,10 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
-import { GET_DEVICE_STUBS } from "@/lib/queries";
-import { ResultOf } from '@graphql-typed-document-node/core';
+import { useState } from 'react';
 import DeviceModal from './DeviceModal';
 import DevicePill from './DevicePill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
-import { RefreshCcw, ArrowUpDown } from "lucide-react";
-
-type GetDevicesResult = ResultOf<typeof GET_DEVICE_STUBS>;
-type Device = GetDevicesResult['devices'][number];
+import { Device } from 'puddle-graphql';
 
 interface DeviceTableProps {
     queryRef: QueryRef<any>;

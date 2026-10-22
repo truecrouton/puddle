@@ -1,12 +1,8 @@
 'use client';
 
-import { GET_AUTOMATIONS } from "@/lib/queries";
-import { ResultOf } from '@graphql-typed-document-node/core';
+import { Automation } from 'puddle-graphql';
 import AutomationPill from './AutomationPill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
-
-type GetAutomationsResult = ResultOf<typeof GET_AUTOMATIONS>;
-type Automation = GetAutomationsResult['automations'][number];
 
 interface AutomationPillsProps {
     queryRef: QueryRef<any>;

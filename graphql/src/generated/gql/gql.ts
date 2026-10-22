@@ -21,12 +21,14 @@ type Documents = {
     "\n    query GetDevice($id: Int!) {\n      device(id: $id) {\n        id\n        name\n        kind\n        stateKey\n        setKey\n        setSuffix\n        valueOn\n        valueOff\n        topicId\n        topic { topic }\n      }\n    }\n  ": typeof types.GetDeviceDocument,
     "\n    query GetDeviceStubs {\n      devices {\n        id\n        name\n        kind\n      }\n    }\n  ": typeof types.GetDeviceStubsDocument,
     "\n    query GetFavorites {\n      favorites {\n        name\n        topicId\n        stateKey\n        state\n      }\n    }\n  ": typeof types.GetFavoritesDocument,
+    "\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": typeof types.GetScheduleDocument,
     "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  ": typeof types.GetTopicsDocument,
     "\n    query GetTopicDetails {\n      topics {\n        id\n        topic\n        devices {\n          id\n          name\n          kind\n        }\n        automations {\n          id\n          name\n          trigger\n        }\n        usedInAutomations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": typeof types.GetTopicDetailsDocument,
     "\n  mutation SetDevice($input: SetDeviceInput!) {\n    setDevice(input: $input)\n  }\n": typeof types.SetDeviceDocument,
     "\n  mutation SignIn($input: SignInInput!) {\n    signIn(input: $input)\n  }\n": typeof types.SignInDocument,
+    "\n  mutation SignOut {\n    signOut\n  }\n": typeof types.SignOutDocument,
     "\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n": typeof types.SignUpDocument,
-    "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n    }\n  }\n": typeof types.UpsertDeviceDocument,
+    "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n": typeof types.UpsertDeviceDocument,
     "\n  mutation UpsertTopic($input: UpsertTopicInput!) {\n    upsertTopic(input: $input) {\n      id\n      topic\n    }\n  }\n": typeof types.UpsertTopicDocument,
 };
 const documents: Documents = {
@@ -37,12 +39,14 @@ const documents: Documents = {
     "\n    query GetDevice($id: Int!) {\n      device(id: $id) {\n        id\n        name\n        kind\n        stateKey\n        setKey\n        setSuffix\n        valueOn\n        valueOff\n        topicId\n        topic { topic }\n      }\n    }\n  ": types.GetDeviceDocument,
     "\n    query GetDeviceStubs {\n      devices {\n        id\n        name\n        kind\n      }\n    }\n  ": types.GetDeviceStubsDocument,
     "\n    query GetFavorites {\n      favorites {\n        name\n        topicId\n        stateKey\n        state\n      }\n    }\n  ": types.GetFavoritesDocument,
+    "\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": types.GetScheduleDocument,
     "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  ": types.GetTopicsDocument,
     "\n    query GetTopicDetails {\n      topics {\n        id\n        topic\n        devices {\n          id\n          name\n          kind\n        }\n        automations {\n          id\n          name\n          trigger\n        }\n        usedInAutomations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": types.GetTopicDetailsDocument,
     "\n  mutation SetDevice($input: SetDeviceInput!) {\n    setDevice(input: $input)\n  }\n": types.SetDeviceDocument,
     "\n  mutation SignIn($input: SignInInput!) {\n    signIn(input: $input)\n  }\n": types.SignInDocument,
+    "\n  mutation SignOut {\n    signOut\n  }\n": types.SignOutDocument,
     "\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n": types.SignUpDocument,
-    "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n    }\n  }\n": types.UpsertDeviceDocument,
+    "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n": types.UpsertDeviceDocument,
     "\n  mutation UpsertTopic($input: UpsertTopicInput!) {\n    upsertTopic(input: $input) {\n      id\n      topic\n    }\n  }\n": types.UpsertTopicDocument,
 };
 
@@ -91,6 +95,10 @@ export function graphql(source: "\n    query GetFavorites {\n      favorites {\n
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  "): (typeof documents)["\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  "];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  "): (typeof documents)["\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  "];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -107,11 +115,15 @@ export function graphql(source: "\n  mutation SignIn($input: SignInInput!) {\n  
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation SignOut {\n    signOut\n  }\n"): (typeof documents)["\n  mutation SignOut {\n    signOut\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n"): (typeof documents)["\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n    }\n  }\n"];
+export function graphql(source: "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

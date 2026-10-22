@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TopicSelectFieldset } from './TopicsSelectFieldset';
-import { zodUpsertDeviceSchema } from '@/lib/zod-schemas';
+import { zodUpsertDeviceSchema } from 'puddle-graphql';
 
 interface DeviceModalProps {
     isOpen: boolean;
@@ -32,7 +32,6 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
         register,
         handleSubmit,
         control,
-        reset,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(zodUpsertDeviceSchema),
@@ -68,11 +67,10 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
                 }
             });
             onSuccess();
-            reset(data);
         }
-        catch (err) {
-            console.error("‼️", err);
-            setAlertError(`Uh oh.. ${err}`);
+        catch (error) {
+            console.error(error);
+            setAlertError((error as Error).message);
         }
     };
 

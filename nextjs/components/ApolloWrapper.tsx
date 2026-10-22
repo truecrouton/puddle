@@ -7,7 +7,7 @@ import { HttpLink } from "@apollo/client";
 export function ApolloWrapper({ children }: { children: ReactNode; }) {
     function makeClient() {
         const httpLink = new HttpLink({
-            uri: 'http://localhost:3000/api/graphql',
+            uri: 'http://localhost:3030/api/graphql',
             credentials: 'include', // Used in the browser after hydration
         });
 

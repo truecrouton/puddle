@@ -1,14 +1,10 @@
 'use client';
 
-import { GET_AUTOMATION } from "@/lib/queries";
-import { ResultOf } from '@graphql-typed-document-node/core';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
 import { PencilSparkles, RotateCwFadingClock, SatelliteDish, Split, SquarePlay } from "lucide-react";
 import { ReactNode } from "react";
-import { Expression } from "@/generated/resolvers-types";
+import { Automation, Expression } from 'puddle-graphql';
 
-type GetAutomationResult = ResultOf<typeof GET_AUTOMATION>;
-type Automation = GetAutomationResult['automation'];
 
 const iconMap: Record<string, ReactNode> = {
     publish: <PencilSparkles className="w-5 h-5 shrink-0" />,
@@ -36,7 +32,7 @@ export default function AutomationList({ queryRef }: AutomationListProps) {
     return (
         <>
             <h3 className="text-2xl font-normal mb-6">You're setting up an automation named <strong>{automation?.name}</strong>.</h3>
-            <ul className="list bg-base-100 rounded-box shadow-md">
+            <ul className="list bg-base-100">
                 {automation?.expressions.filter((e) => (!e.conditionalExpressionId)).map((expression) => (
                     <li className="list-row px-0" key={expression.id}>
                         <div><Split className="w-10 h-10 mr-2" /></div>

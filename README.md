@@ -3,7 +3,9 @@
 
 ![Home page](repo/puddle.svg "Puddle")
 
-A simple home control and automation runner for [mqtt](https://mqtt.org). Provides an API for custom frontends or use the included web interface. Runs on [Node.js](https://nodejs.org).
+*(Currently moving the project to Next.js/React and graphql - setup will be different)*
+
+A simple home control and automation runner for [mqtt](https://mqtt.org). Provides an API for custom frontends or use the included web interface. Runs on [Node.js](https://nodejs.org). 
 
 Developed for use with zigbee devices through [zigbee2mqtt](https://www.zigbee2mqtt.io/), but any mqtt devices *should* 🤞 work.
 

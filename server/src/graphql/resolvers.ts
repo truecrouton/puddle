@@ -1,15 +1,16 @@
-import { ApolloServerContext } from '@/app/api/graphql/route';
-import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput } from '@/generated/resolvers-types';
-import { keysToCamelCase } from '@/lib/case-converter';
-import { cookies } from 'next/headers';
-import { encrypt } from '@/lib/session';
+import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput } from 'puddle-graphql';
+import { celsiusToFahrenheit, keysToCamelCase } from '../helper';
+import { encrypt } from './session';
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
-import type { UpsertDeviceInput } from '@/generated/gql/graphql';
 import { ZodType } from 'zod';
 import { GraphQLError } from 'graphql';
 import { zodEmptyInputSchema, zodIdInputSchema, zodSetDeviceInputSchema, zodSignInInputSchema, zodSignUpInputSchema, zodUpsertDeviceSchema, zodUpsertTopicInputSchema } from './zod-schemas';
 import dotenv from 'dotenv';
 import path from 'path';
+import { cacheGet } from '../storage';
+import { scheduledJobs } from 'node-schedule';
+import { dailySchedulerJob } from '../schedule';
+import { ApolloServerContext } from './context';
 
 const validateInput = <TResult, TParent, TContext, TArgs>(
     schema: ZodType<any>,
@@ -127,7 +128,7 @@ export const resolvers: Resolvers = {
             const controls = stmt.all() as Record<string, any>[];
 
             const camelControls = controls.map((c) => {
-                const state: string = c.kind == 'toggleable' ? 'false' : '0';
+                const state = cacheGet(c.topic_id, c.state_key ?? '') || '';
                 return keysToCamelCase({ ...c, state }) as Control;
             });
             return camelControls;
@@ -149,15 +150,32 @@ export const resolvers: Resolvers = {
         favorites: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
             const stmt = context.db.prepare('SELECT name, topic_id, key as state_key FROM charts WHERE is_favorite=1');
             const favorites = stmt.all() as Record<string, any>[];
-            const camelFavorites = favorites.map((f) => keysToCamelCase({ ...f, state: '0' }) as Favorite);
+
+            const displayFarenheit = process.env.TEMPERATURE_CONVERT_TO === 'F';
+            const camelFavorites = favorites.map((f) => {
+                const value = cacheGet(f.topic_id, f.state_key) || '?';
+                return keysToCamelCase({ ...f, state: displayFarenheit && f.state_key === 'temperature' ? celsiusToFahrenheit(value) : value }) as Favorite;
+            });
             return camelFavorites;
+        }, { protected: false }),
+        schedule: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
+            const stmt = context.db.prepare("SELECT id, name, trigger FROM automations WHERE trigger IN ('sun', 'time') AND (position=? OR trigger_at=?)");
+
+            const schedule = Object.keys(scheduledJobs).reduce((jobs, job) => job === dailySchedulerJob ? jobs : [...jobs, {
+                name: scheduledJobs[job].name,
+                runs_at: scheduledJobs[job].nextInvocation() || 'Elapsed',
+                automations: stmt.all(job, job)
+            }], <{ name: string, runs_at: Date | string; }[]>[]);
+
+            const camelSchedule = schedule.map((s) => keysToCamelCase(s) as Schedule);
+            return camelSchedule;
         }),
         topics: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
             const stmt = context.db.prepare('SELECT * FROM topics');
             const topics = stmt.all() as Record<string, any>[];
             const camelTopics = topics.map((t) => keysToCamelCase(t) as Topic);
             return camelTopics;
-        })
+        }),
     },
     Mutation: {
         setDevice: validateInput(zodSetDeviceInputSchema, async (_parent, { input }: { input: SetDeviceInput; }, context: ApolloServerContext) => {
@@ -166,14 +184,15 @@ export const resolvers: Resolvers = {
             return true;
         }),
         signIn: validateInput(zodSignInInputSchema, async (_parent, { input }: { input: SignInInput; }, context: ApolloServerContext) => {
+            console.log(input);
             const user = context.db.prepare('SELECT id, password, is_admin FROM users WHERE username=?').get(input.username) as User;
             if (!user) throw new GraphQLError(
-                'Invalid username or password',
+                'Invalid username or password 1',
                 { extensions: { code: 'BAD_USER_INPUT' } }
             );
 
             if (!verifyPassword(input.password, user.password)) throw new GraphQLError(
-                'Invalid username or password',
+                'Invalid username or password 2',
                 { extensions: { code: 'BAD_USER_INPUT' } }
             );
 
@@ -183,10 +202,9 @@ export const resolvers: Resolvers = {
 
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
             const session = await encrypt({ sessionId, expiresAt });
-            const cookieStore = await cookies();
-            cookieStore.set('session', session, {
+            context.reply.setCookie('session', session, {
                 httpOnly: true,
-                secure: true,
+                secure: false,
                 expires: expiresAt,
                 sameSite: 'lax',
                 path: '/',
@@ -195,15 +213,11 @@ export const resolvers: Resolvers = {
             return true;
         }, { protected: false }),
         signOut: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
-            if (!context.userId) {
-                throw new Error('Not authenticated');
-            }
-
             try {
                 context.db.prepare('UPDATE users SET session_id=NULL, session_created_at=NULL WHERE id=?').run(context.userId);
 
-                const cookieStore = await cookies();
-                cookieStore.delete('session');
+                context.userId = 0;
+                context.reply.clearCookie('session');
 
                 return true;
             }

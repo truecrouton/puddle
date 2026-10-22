@@ -18,6 +18,7 @@ import { gracefulShutdown } from "node-schedule";
 import { triggerTopicAutomations } from "./automation";
 import { loadPlugins } from "./plugin";
 import { puddlePathRoot } from './path-anchor';
+import { initFastify } from './graphql/server';
 
 const puddleInit = async () => {
     dotenv.config({ path: `${puddlePathRoot}/../puddle.env` });
@@ -54,6 +55,8 @@ const puddleInit = async () => {
         .map(item => item.trim())
         .filter(Boolean);
     loadPlugins(`${puddlePathRoot}/plugin/`, pluginDirs, { logger: console, mqttClient: client });
+
+    initFastify();
 
     init().then(() => start());
 };

@@ -1,10 +1,6 @@
 import { BatteryCharging, ThermometerSun, WavesVertical } from "lucide-react";
+import { Favorite } from "puddle-graphql";
 import { ReactNode } from "react";
-import { ResultOf } from '@graphql-typed-document-node/core';
-import { GET_FAVORITES } from "@/lib/queries";
-
-type GetFavoritesResult = ResultOf<typeof GET_FAVORITES>;
-type Favorite = GetFavoritesResult['favorites'][number];
 
 const iconMap: Record<string, ReactNode> = {
     temperature: <ThermometerSun className="w-5 h-5 mr-2" />,

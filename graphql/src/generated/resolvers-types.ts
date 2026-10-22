@@ -128,6 +128,7 @@ export type Query = {
   device?: Maybe<Device>;
   devices: Array<Device>;
   favorites: Array<Favorite>;
+  schedule: Array<Schedule>;
   topics: Array<Topic>;
 };
 
@@ -139,6 +140,13 @@ export type QueryAutomationArgs = {
 
 export type QueryDeviceArgs = {
   id: Scalars['Int']['input'];
+};
+
+export type Schedule = {
+  __typename?: 'Schedule';
+  automations: Array<Automation>;
+  name: Scalars['String']['output'];
+  runsAt?: Maybe<Scalars['String']['output']>;
 };
 
 export type SetDeviceInput = {
@@ -161,11 +169,11 @@ export type SignUpInput = {
 
 export type Topic = {
   __typename?: 'Topic';
-  automations: Array<Automation>;
-  devices: Array<Device>;
+  automations?: Maybe<Array<Automation>>;
+  devices?: Maybe<Array<Device>>;
   id: Scalars['Int']['output'];
   topic: Scalars['String']['output'];
-  usedInAutomations: Array<Automation>;
+  usedInAutomations?: Maybe<Array<Automation>>;
 };
 
 export type UpsertDeviceInput = {
@@ -277,6 +285,7 @@ export type ResolversTypes = {
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
+  Schedule: ResolverTypeWrapper<Schedule>;
   SetDeviceInput: SetDeviceInput;
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
@@ -299,6 +308,7 @@ export type ResolversParentTypes = {
   Int: Scalars['Int']['output'];
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
+  Schedule: Schedule;
   SetDeviceInput: SetDeviceInput;
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
@@ -393,15 +403,22 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceArgs, 'id'>>;
   devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
   favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType>;
+  schedule?: Resolver<Array<ResolversTypes['Schedule']>, ParentType, ContextType>;
   topics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType>;
 };
 
-export type TopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = {
+export type ScheduleResolvers<ContextType = any, ParentType extends ResolversParentTypes['Schedule'] = ResolversParentTypes['Schedule']> = {
   automations?: Resolver<Array<ResolversTypes['Automation']>, ParentType, ContextType>;
-  devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  runsAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+};
+
+export type TopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = {
+  automations?: Resolver<Maybe<Array<ResolversTypes['Automation']>>, ParentType, ContextType>;
+  devices?: Resolver<Maybe<Array<ResolversTypes['Device']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   topic?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  usedInAutomations?: Resolver<Array<ResolversTypes['Automation']>, ParentType, ContextType>;
+  usedInAutomations?: Resolver<Maybe<Array<ResolversTypes['Automation']>>, ParentType, ContextType>;
 };
 
 export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
@@ -421,6 +438,7 @@ export type Resolvers<ContextType = any> = {
   Favorite?: FavoriteResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Schedule?: ScheduleResolvers<ContextType>;
   Topic?: TopicResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
 };

@@ -1,4 +1,4 @@
-import { graphql } from '@/generated/gql';
+import { graphql } from "puddle-graphql";
 
 export const GET_AUTOMATION = graphql(`
     query GetAutomation($id: Int!) {
@@ -104,6 +104,20 @@ export const GET_FAVORITES = graphql(`
     }
   `);
 
+export const GET_SCHEDULE = graphql(`
+    query GetSchedule {
+      schedule {
+        name
+        runsAt
+        automations {
+          id
+          name
+          trigger
+        }
+      }
+    }
+  `);
+
 export const GET_TOPICS = graphql(`
     query GetTopics {
       topics {
@@ -149,6 +163,12 @@ export const SIGN_IN = graphql(`
   }
 `);
 
+export const SIGN_OUT = graphql(`
+  mutation SignOut {
+    signOut
+  }
+`);
+
 export const SIGN_UP = graphql(`
   mutation SignUp($input: SignUpInput!) {
     signUp(input: $input)
@@ -160,6 +180,7 @@ export const UPSERT_DEVICE = graphql(`
     upsertDevice(input: $input) {
       id
       name
+      kind
     }
   }
 `);

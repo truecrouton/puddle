@@ -1,16 +1,12 @@
 import { useState } from 'react';
 import BaseModal from './BaseModal';
-import { GET_CONTROLS, SET_DEVICE } from '@/lib/queries';
+import { SET_DEVICE } from '@/lib/queries';
 import { useMutation } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ResultOf } from '@graphql-typed-document-node/core';
-import { SetDeviceInput } from '@/generated/resolvers-types';
-
-type GetControlsResult = ResultOf<typeof GET_CONTROLS>;
-type Control = GetControlsResult['controls'][number];
+import { Control, SetDeviceInput } from 'puddle-graphql';
 
 interface ControlModalProps {
     isOpen: boolean;
@@ -70,8 +66,9 @@ export default function ControlModal({ isOpen, onClose, onSuccess, control }: Co
             onSuccess();
             reset(data);
         }
-        catch (err) {
-            setAlertError((err as Error).message);
+        catch (error) {
+            console.error(error);
+            setAlertError((error as Error).message);
         }
     };
 

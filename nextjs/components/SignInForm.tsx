@@ -7,7 +7,7 @@ import { InputFieldset } from './InputFieldset';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { zodSignInInputSchema } from '@/lib/zod-schemas';
+import { zodSignInInputSchema } from 'puddle-graphql';
 import ErrorAlert from './ErrorAlert';
 import { redirect } from 'next/navigation';
 
@@ -20,6 +20,7 @@ export default function SignInForm() {
     const {
         register,
         handleSubmit,
+        reset,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(zodSignInInputSchema),
@@ -37,11 +38,16 @@ export default function SignInForm() {
                     input: data
                 }
             });
+        }
+        catch (error) {
+            console.error(error);
+            setAlertError((error as Error).message);
+        }
 
-        }
-        catch (err) {
-            setAlertError((err as Error).message);
-        }
+        reset({
+            username: '',
+            password: ''
+        });
 
         redirect('/dashboard');
     };

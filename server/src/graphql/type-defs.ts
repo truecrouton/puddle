@@ -101,12 +101,18 @@ export const typeDefs = `#graphql
     state: String!
   }
 
+  type Schedule {
+    name: String!
+    runsAt: String
+    automations: [Automation!]!
+  }
+
   type Topic {
     id: Int!
     topic: String!
-    devices: [Device!]!
-    automations: [Automation!]!
-    usedInAutomations: [Automation!]!
+    devices: [Device!]
+    automations: [Automation!]
+    usedInAutomations: [Automation!]
   }
 
   type User {
@@ -125,6 +131,7 @@ export const typeDefs = `#graphql
     device(id: Int!): Device
     devices: [Device!]!
     favorites: [Favorite!]!
+    schedule: [Schedule!]!
     topics: [Topic!]!
   }
 

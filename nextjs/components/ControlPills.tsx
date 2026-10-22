@@ -1,14 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { GET_CONTROLS } from "@/lib/queries";
-import { ResultOf } from '@graphql-typed-document-node/core';
 import ControlModal from './ControlModal';
 import ControlPill from './ControlPill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
-
-type GetControlsResult = ResultOf<typeof GET_CONTROLS>;
-type Control = GetControlsResult['controls'][number];
+import { Control } from 'puddle-graphql';
 
 interface ControlPillsProps {
     queryRef: QueryRef<any>;

@@ -1,5 +1,24 @@
 import { ApolloWrapper } from "@/components/ApolloWrapper";
 import SignInForm from "@/components/SignInForm";
+import { UserPlus } from "lucide-react";
+import { PreloadQuery } from '@/lib/apollo-server';
+import { connection } from 'next/server';
+import { GET_FAVORITES } from "@/lib/queries";
+import FavoritePills from "@/components/FavoritePills";
+
+async function PreloadedFavorites() {
+  // Tells Next.js this segment runs at request-time (compatible with cacheComponents)
+  await connection();
+
+  return (
+    <PreloadQuery query={GET_FAVORITES}>
+      {(queryRef) => (
+        // Pass the query reference down to the client component
+        <FavoritePills queryRef={queryRef} />
+      )}
+    </PreloadQuery>
+  );
+}
 
 export default async function Home() {
   return (
@@ -16,42 +35,23 @@ export default async function Home() {
           </div>
           <div className="navbar-end hidden lg:flex">
             <ul className="menu menu-horizontal px-1">
-              <li>
-                <details>
-                  <summary>Parent</summary>
-                  <ul className="p-2 bg-base-100 w-40 z-1">
-                    <li><button>Submenu 1</button></li>
-                    <li><button>Submenu 2</button></li>
-                  </ul>
-                </details>
-              </li>
-              <li><a href="/">Item 1</a></li>
-              <li><button>Item 3</button></li>
+              <li><button><UserPlus /></button></li>
             </ul>
           </div>
         </div>
 
         <div className="collapse-content lg:hidden z-1">
           <ul className="menu">
-            <li><button>Item c1</button></li>
-            <li>
-              <button>Parent</button>
-              <ul>
-                <li><button>Submenu c1</button></li>
-                <li><button>Submenu c2</button></li>
-              </ul>
-            </li>
-            <li><button>Item c3</button></li>
+            <li><button><UserPlus /></button></li>
           </ul>
         </div>
       </div>
 
       <main className="max-w-4xl mx-auto p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Home automation with mqtt</h1>
-        </div>
-        <h3>A simple home control and automation runner for mqtt. Provides an API for custom frontends or use the included web interface. Runs on node.js.</h3>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Home automation with mqtt</h1>
+        <h3 className="text-2xl font-normal mb-6">A simple home control and automation runner for mqtt. Provides an API for custom frontends or use the included web interface. Runs on node.js.</h3>
         <ApolloWrapper>
+          <PreloadedFavorites />
           <SignInForm />
         </ApolloWrapper>
       </main>
