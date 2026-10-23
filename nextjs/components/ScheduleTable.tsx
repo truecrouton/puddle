@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { iconMap as automationIconMap } from './AutomationPill';
 import { Schedule } from 'puddle-graphql';
 import { CircleQuestionMark } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 
 interface ScheduleTableProps {
     queryRef: QueryRef<any>;
@@ -27,8 +28,8 @@ export default function ScheduleTable({ queryRef }: ScheduleTableProps) {
                     {schedule.map((s) => (
                         <tr key={s.name} >
                             <th className="font-semibold">{s.name}</th>
-                            <td>
-                                {s.runsAt}
+                            <td className="whitespace-nowrap">
+                                {s.runsAt ? format(parseISO(s.runsAt), "h:mm aa") : "Elapsed"}
                             </td>
                             <td>
                                 <div className="inline-flex items-center gap-2 flex-wrap">

@@ -1,5 +1,11 @@
 import { graphql } from "puddle-graphql";
 
+export const DELETE_EXPRESSION = graphql(`
+  mutation DeleteExpression($input: IdInput!) {
+    deleteExpression(input: $input)
+  }
+`);
+
 export const GET_AUTOMATION = graphql(`
     query GetAutomation($id: Int!) {
       automation(id: $id) {
@@ -13,6 +19,7 @@ export const GET_AUTOMATION = graphql(`
         triggerValue
         expressions {
           id
+          automationId
           kind
           isElseStep
           expression
@@ -181,6 +188,26 @@ export const UPSERT_DEVICE = graphql(`
       id
       name
       kind
+    }
+  }
+`);
+
+export const UPSERT_EXPRESSION = graphql(`
+  mutation UpsertExpression($input: UpsertExpressionInput!) {
+    upsertExpression(input: $input) {
+      id
+      automationId
+      kind
+      isElseStep
+      expression
+      conditionalExpressionId
+      topicId
+      topic
+      message
+      deviceId
+      deviceKind
+      deviceName
+      state
     }
   }
 `);

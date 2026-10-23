@@ -1,33 +1,27 @@
 'use client';
 
 import { QueryRef, useReadQuery } from '@apollo/client/react';
-import { PencilSparkles, RotateCwFadingClock, SatelliteDish, Split, SquarePlay } from "lucide-react";
-import { ReactNode } from "react";
+import { Plus, Split } from "lucide-react";
 import { Automation, Expression } from 'puddle-graphql';
-
-
-const iconMap: Record<string, ReactNode> = {
-    publish: <PencilSparkles className="w-5 h-5 shrink-0" />,
-    notify: <SatelliteDish className="w-5 h-5 shrink-0" />,
-    device: <SquarePlay className="w-5 h-5 shrink-0" />,
-    wait: <RotateCwFadingClock className="w-5 h-5 shrink-0" />,
-};
-
-function transformState(expression: Expression) {
-    const middleDevices = ['dimmable', 'positionable'];
-
-    if (middleDevices.includes(expression.deviceKind || '') && !isNaN(Number(expression.state))) return `(${expression.state}%)`;
-    if (expression.deviceKind == 'toggleable') return expression.state == '0' ? '(Off)' : '(On)';
-    else return expression.state || '?';
-};
+import ExpressionItem from './ExpressionItem';
+import { useState } from 'react';
+import ExpressionModal from './ExpressionModal';
 
 interface AutomationListProps {
     queryRef: QueryRef<any>;
 }
 
 export default function AutomationList({ queryRef }: AutomationListProps) {
+    const [selectedConditional, setSelectedConditional] = useState<Expression | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const { data } = useReadQuery(queryRef);
     const automation = data.automation as Automation;
+
+    const handleExpressionClick = (expression: Expression) => {
+        setSelectedConditional(expression);
+        setIsModalOpen(true);
+    };
 
     return (
         <>
@@ -37,53 +31,35 @@ export default function AutomationList({ queryRef }: AutomationListProps) {
                     <li className="list-row px-0" key={expression.id}>
                         <div><Split className="w-10 h-10 mr-2" /></div>
                         <div>
-                            <div className="flex gap-2 mb-3">
-                                <span className="text-xl text-primary font-semibold shrink-0">IF</span>
-                                <span className="text-xl opacity-80">{expression.expression}</span>
-                            </div>
+                            <ExpressionItem conditional={expression} onClick={() => handleExpressionClick(expression)} key={expression.id} />
                             {
                                 automation.expressions.filter((e) => !e.isElseStep && e.conditionalExpressionId == expression.id).map((conditional) => (
-                                    conditional.kind == 'device' ? (
-                                        <div className="text-xl flex items-center gap-2 opacity-80 mb-3" key={conditional.id}>
-                                            {iconMap[conditional.kind]}
-                                            <span className="text-primary shrink-0">{conditional.kind}</span>
-                                            <span className="text-accent">{conditional.deviceName}</span>
-                                            <span className="text-secondary">{transformState(conditional)}</span>
-                                        </div>
-                                    ) : (
-                                        <div className="text-xl flex items-center gap-2 opacity-80 mb-3" key={conditional.id}>
-                                            {iconMap[conditional.kind]}
-                                            <span className="text-primary shrink-0">{conditional.kind}</span>
-                                            <span className="text-accent">{conditional.topic}</span>
-                                            <span className="text-secondary">{conditional.message}</span>
-                                        </div>)
+                                    <ExpressionItem conditional={conditional} onClick={() => handleExpressionClick(conditional)} key={conditional.id} />
                                 ))
                             }
+                            <button className="btn btn-primary btn-sm btn-circle mb-3" onClick={() => handleExpressionClick({ ...expression, id: 0, conditionalExpressionId: expression.id, isElseStep: false })}>
+                                <Plus />
+                            </button>
                             <div className="flex gap-2 mb-3">
                                 <span className="text-xl text-primary font-semibold shrink-0">ELSE</span>
                             </div>
                             {
                                 automation.expressions.filter((e) => e.isElseStep && e.conditionalExpressionId == expression.id).map((conditional) => (
-                                    conditional.kind == 'device' ? (
-                                        <div className="text-xl flex items-center gap-2 opacity-80 mb-3" key={conditional.id}>
-                                            {iconMap[conditional.kind]}
-                                            <span className="text-primary shrink-0">{conditional.kind}</span>
-                                            <span className="text-accent">{conditional.deviceName}</span>
-                                            <span className="text-secondary">{transformState(conditional)}</span>
-                                        </div>
-                                    ) : (
-                                        <div className="text-xl flex items-center gap-2 opacity-80 mb-3" key={conditional.id}>
-                                            {iconMap[conditional.kind]}
-                                            <span className="text-primary shrink-0">{conditional.kind}</span>
-                                            <span className="text-accent">{conditional.topic}</span>
-                                            <span className="text-secondary">{conditional.message}</span>
-                                        </div>)
+                                    <ExpressionItem conditional={conditional} onClick={() => handleExpressionClick(conditional)} key={conditional.id} />
                                 ))
                             }
+                            <button className="btn btn-primary btn-sm btn-circle mb-3" onClick={() => handleExpressionClick({ ...expression, id: 0, conditionalExpressionId: expression.id, isElseStep: true })}>
+                                <Plus />
+                            </button>
                         </div>
                     </li>
                 ))}
             </ul>
+            <button className="btn btn-primary btn-sm btn-circle mb-3" onClick={() => handleExpressionClick({ id: 0, automationId: automation.id, conditionalExpressionId: 0, isElseStep: false } as Expression)}>
+                <Plus />
+            </button>
+
+            {selectedConditional && <ExpressionModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => setIsModalOpen(false)} expression={selectedConditional} />}
         </>
     );
 }

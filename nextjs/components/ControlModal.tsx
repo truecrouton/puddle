@@ -32,7 +32,6 @@ export const localInputSchema = z.object({
 });
 
 export default function ControlModal({ isOpen, onClose, onSuccess, control }: ControlModalProps) {
-    const [alertError, setAlertError] = useState('');
     const [setDevice, { loading: updatePending, error: setError }] = useMutation(SET_DEVICE);
 
     type DeviceSetData = z.infer<typeof localInputSchema>;
@@ -56,27 +55,21 @@ export default function ControlModal({ isOpen, onClose, onSuccess, control }: Co
             deviceId: data.deviceId,
             state: (data.kind == 'toggleable' ? data.toggleableState : data.positionableState).toString()
         };
-        setAlertError('');
-        try {
-            await setDevice({
-                variables: {
-                    input: payload
-                }
-            });
-            onSuccess();
-            reset(data);
-        }
-        catch (error) {
-            console.error(error);
-            setAlertError((error as Error).message);
-        }
+
+        await setDevice({
+            variables: {
+                input: payload
+            }
+        });
+        onSuccess();
+        reset(data);
     };
 
     if (!control) return null;
     else {
         return (
-            <BaseModal isOpen={isOpen} onClose={onClose} title={`Control ${control.name}`} alertError={alertError}>
-                <form onSubmit={handleSubmit(onSubmit)} onChange={() => setAlertError('')}>
+            <BaseModal isOpen={isOpen} onClose={onClose} title={`Control ${control.name}`} alertErrors={[setError?.message]}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                     <fieldset disabled={updatePending} >
                         <input type="hidden" {...register("deviceId")} />
                         <input type="hidden" {...register("kind")} />

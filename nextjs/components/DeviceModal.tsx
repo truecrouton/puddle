@@ -19,8 +19,6 @@ interface DeviceModalProps {
 }
 
 export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: DeviceModalProps) {
-    const [alertError, setAlertError] = useState('');
-
     const { data, loading, error: getDeviceError } = useQuery(GET_DEVICE,
         isOpen && deviceId ? { variables: { id: deviceId }, fetchPolicy: 'cache-and-network' } : skipToken);
     const [upsertDevice, { loading: updatePending, error: updateError }] = useMutation(UPSERT_DEVICE);
@@ -59,27 +57,20 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
     });
 
     const onSubmit = async (data: DeviceData) => {
-        setAlertError('');
-        try {
-            await upsertDevice({
-                variables: {
-                    input: data
-                }
-            });
-            onSuccess();
-        }
-        catch (error) {
-            console.error(error);
-            setAlertError((error as Error).message);
-        }
+        await upsertDevice({
+            variables: {
+                input: data
+            }
+        });
+        onSuccess();
     };
 
     // ALL HOOKS ABOVE Early Return (unconditional)
     if (!device) return null;
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} title={"Device"} alertError={alertError}>
-            <form onSubmit={handleSubmit(onSubmit)} onChange={() => setAlertError('')} key={deviceId ?? 'new'}>
+        <BaseModal isOpen={isOpen} onClose={onClose} title={"Device"} alertErrors={[getDeviceError?.message, updateError?.message]}>
+            <form onSubmit={handleSubmit(onSubmit)} key={deviceId ?? 'new'}>
                 <fieldset disabled={loading} >
                     <input type="hidden" name="id" value={deviceId} />
                     <Suspense fallback={<EmptySelectFieldset label="Topic" />}>

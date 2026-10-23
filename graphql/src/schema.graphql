@@ -1,3 +1,7 @@
+input IdInput {
+  id: Int!
+}
+
 input SetDeviceInput {
   deviceId: Int!
   state: String!
@@ -26,6 +30,19 @@ input UpsertDeviceInput {
   valueOn: String
   valueOff: String
   topicId: Int!
+}
+
+input UpsertExpressionInput {
+  id: Int!
+  automationId: Int!
+  kind: String!
+  isElseStep: Boolean!
+  expression: String
+  conditionalExpressionId: Int
+  topicId: Int
+  message: String
+  deviceId: Int
+  state: String
 }
 
 input UpsertTopicInput {
@@ -80,6 +97,7 @@ type Device {
 
 type Expression {
   id: Int!
+  automationId: Int!
   kind: String!
   isElseStep: Boolean!
   expression: String
@@ -135,6 +153,8 @@ type Query {
 }
 
 type Mutation {
+  deleteExpression(input: IdInput!): Boolean!
+  upsertExpression(input: UpsertExpressionInput!): Expression!
   upsertDevice(input: UpsertDeviceInput!): Device!
   upsertTopic(input: UpsertTopicInput!): Topic!
   setDevice(input: SetDeviceInput!): Boolean!
