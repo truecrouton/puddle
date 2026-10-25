@@ -14,7 +14,10 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
+    "\n  mutation DeleteAutomation($input: IdInput!) {\n    deleteAutomation(input: $input)\n  }\n": typeof types.DeleteAutomationDocument,
+    "\n  mutation DeleteDevice($input: IdInput!) {\n    deleteDevice(input: $input)\n  }\n": typeof types.DeleteDeviceDocument,
     "\n  mutation DeleteExpression($input: IdInput!) {\n    deleteExpression(input: $input)\n  }\n": typeof types.DeleteExpressionDocument,
+    "\n  mutation DeleteTopic($input: IdInput!) {\n    deleteTopic(input: $input)\n  }\n": typeof types.DeleteTopicDocument,
     "\n    query GetAutomation($id: Int!) {\n      automation(id: $id) {\n        id\n        name\n        trigger\n        triggerAt\n        position\n        topicId\n        triggerKey\n        triggerValue\n        expressions {\n          id\n          automationId\n          kind\n          isElseStep\n          expression\n          conditionalExpressionId\n          topicId\n          topic\n          message\n          deviceId\n          deviceKind\n          deviceName\n          state\n        }\n      }\n    }\n  ": typeof types.GetAutomationDocument,
     "\n    query GetAutomations {\n      automations {\n        id\n        name\n        trigger\n      }\n    }\n  ": typeof types.GetAutomationsDocument,
     "\n    query GetCharts {\n      charts {\n        id\n        name\n        topicId\n        key\n      }\n    }\n  ": typeof types.GetChartsDocument,
@@ -23,6 +26,7 @@ type Documents = {
     "\n    query GetDeviceStubs {\n      devices {\n        id\n        name\n        kind\n      }\n    }\n  ": typeof types.GetDeviceStubsDocument,
     "\n    query GetFavorites {\n      favorites {\n        name\n        topicId\n        stateKey\n        state\n      }\n    }\n  ": typeof types.GetFavoritesDocument,
     "\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": typeof types.GetScheduleDocument,
+    "\n    query GetTopicStatus($id: Int!) {\n      topic(id: $id) {\n        id\n        status {\n          name\n          value\n        }\n      }\n    }\n  ": typeof types.GetTopicStatusDocument,
     "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  ": typeof types.GetTopicsDocument,
     "\n    query GetTopicDetails {\n      topics {\n        id\n        topic\n        devices {\n          id\n          name\n          kind\n        }\n        automations {\n          id\n          name\n          trigger\n        }\n        usedInAutomations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": typeof types.GetTopicDetailsDocument,
     "\n  mutation SetDevice($input: SetDeviceInput!) {\n    setDevice(input: $input)\n  }\n": typeof types.SetDeviceDocument,
@@ -30,11 +34,15 @@ type Documents = {
     "\n  mutation SignOut {\n    signOut\n  }\n": typeof types.SignOutDocument,
     "\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n": typeof types.SignUpDocument,
     "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n": typeof types.UpsertDeviceDocument,
+    "\n  mutation UpsertAutomation($input: UpsertAutomationInput!) {\n    upsertAutomation(input: $input) {\n      id\n      name\n      trigger\n      triggerAt\n      position\n      topicId\n      triggerKey\n      triggerValue\n      isControlShown\n    }\n  }\n": typeof types.UpsertAutomationDocument,
     "\n  mutation UpsertExpression($input: UpsertExpressionInput!) {\n    upsertExpression(input: $input) {\n      id\n      automationId\n      kind\n      isElseStep\n      expression\n      conditionalExpressionId\n      topicId\n      topic\n      message\n      deviceId\n      deviceKind\n      deviceName\n      state\n    }\n  }\n": typeof types.UpsertExpressionDocument,
     "\n  mutation UpsertTopic($input: UpsertTopicInput!) {\n    upsertTopic(input: $input) {\n      id\n      topic\n    }\n  }\n": typeof types.UpsertTopicDocument,
 };
 const documents: Documents = {
+    "\n  mutation DeleteAutomation($input: IdInput!) {\n    deleteAutomation(input: $input)\n  }\n": types.DeleteAutomationDocument,
+    "\n  mutation DeleteDevice($input: IdInput!) {\n    deleteDevice(input: $input)\n  }\n": types.DeleteDeviceDocument,
     "\n  mutation DeleteExpression($input: IdInput!) {\n    deleteExpression(input: $input)\n  }\n": types.DeleteExpressionDocument,
+    "\n  mutation DeleteTopic($input: IdInput!) {\n    deleteTopic(input: $input)\n  }\n": types.DeleteTopicDocument,
     "\n    query GetAutomation($id: Int!) {\n      automation(id: $id) {\n        id\n        name\n        trigger\n        triggerAt\n        position\n        topicId\n        triggerKey\n        triggerValue\n        expressions {\n          id\n          automationId\n          kind\n          isElseStep\n          expression\n          conditionalExpressionId\n          topicId\n          topic\n          message\n          deviceId\n          deviceKind\n          deviceName\n          state\n        }\n      }\n    }\n  ": types.GetAutomationDocument,
     "\n    query GetAutomations {\n      automations {\n        id\n        name\n        trigger\n      }\n    }\n  ": types.GetAutomationsDocument,
     "\n    query GetCharts {\n      charts {\n        id\n        name\n        topicId\n        key\n      }\n    }\n  ": types.GetChartsDocument,
@@ -43,6 +51,7 @@ const documents: Documents = {
     "\n    query GetDeviceStubs {\n      devices {\n        id\n        name\n        kind\n      }\n    }\n  ": types.GetDeviceStubsDocument,
     "\n    query GetFavorites {\n      favorites {\n        name\n        topicId\n        stateKey\n        state\n      }\n    }\n  ": types.GetFavoritesDocument,
     "\n    query GetSchedule {\n      schedule {\n        name\n        runsAt\n        automations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": types.GetScheduleDocument,
+    "\n    query GetTopicStatus($id: Int!) {\n      topic(id: $id) {\n        id\n        status {\n          name\n          value\n        }\n      }\n    }\n  ": types.GetTopicStatusDocument,
     "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  ": types.GetTopicsDocument,
     "\n    query GetTopicDetails {\n      topics {\n        id\n        topic\n        devices {\n          id\n          name\n          kind\n        }\n        automations {\n          id\n          name\n          trigger\n        }\n        usedInAutomations {\n          id\n          name\n          trigger\n        }\n      }\n    }\n  ": types.GetTopicDetailsDocument,
     "\n  mutation SetDevice($input: SetDeviceInput!) {\n    setDevice(input: $input)\n  }\n": types.SetDeviceDocument,
@@ -50,6 +59,7 @@ const documents: Documents = {
     "\n  mutation SignOut {\n    signOut\n  }\n": types.SignOutDocument,
     "\n  mutation SignUp($input: SignUpInput!) {\n    signUp(input: $input)\n  }\n": types.SignUpDocument,
     "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n": types.UpsertDeviceDocument,
+    "\n  mutation UpsertAutomation($input: UpsertAutomationInput!) {\n    upsertAutomation(input: $input) {\n      id\n      name\n      trigger\n      triggerAt\n      position\n      topicId\n      triggerKey\n      triggerValue\n      isControlShown\n    }\n  }\n": types.UpsertAutomationDocument,
     "\n  mutation UpsertExpression($input: UpsertExpressionInput!) {\n    upsertExpression(input: $input) {\n      id\n      automationId\n      kind\n      isElseStep\n      expression\n      conditionalExpressionId\n      topicId\n      topic\n      message\n      deviceId\n      deviceKind\n      deviceName\n      state\n    }\n  }\n": types.UpsertExpressionDocument,
     "\n  mutation UpsertTopic($input: UpsertTopicInput!) {\n    upsertTopic(input: $input) {\n      id\n      topic\n    }\n  }\n": types.UpsertTopicDocument,
 };
@@ -71,7 +81,19 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation DeleteAutomation($input: IdInput!) {\n    deleteAutomation(input: $input)\n  }\n"): (typeof documents)["\n  mutation DeleteAutomation($input: IdInput!) {\n    deleteAutomation(input: $input)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteDevice($input: IdInput!) {\n    deleteDevice(input: $input)\n  }\n"): (typeof documents)["\n  mutation DeleteDevice($input: IdInput!) {\n    deleteDevice(input: $input)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation DeleteExpression($input: IdInput!) {\n    deleteExpression(input: $input)\n  }\n"): (typeof documents)["\n  mutation DeleteExpression($input: IdInput!) {\n    deleteExpression(input: $input)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation DeleteTopic($input: IdInput!) {\n    deleteTopic(input: $input)\n  }\n"): (typeof documents)["\n  mutation DeleteTopic($input: IdInput!) {\n    deleteTopic(input: $input)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -107,6 +129,10 @@ export function graphql(source: "\n    query GetSchedule {\n      schedule {\n  
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n    query GetTopicStatus($id: Int!) {\n      topic(id: $id) {\n        id\n        status {\n          name\n          value\n        }\n      }\n    }\n  "): (typeof documents)["\n    query GetTopicStatus($id: Int!) {\n      topic(id: $id) {\n        id\n        status {\n          name\n          value\n        }\n      }\n    }\n  "];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  "): (typeof documents)["\n    query GetTopics {\n      topics {\n        id\n        topic\n      }\n    }\n  "];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -132,6 +158,10 @@ export function graphql(source: "\n  mutation SignUp($input: SignUpInput!) {\n  
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertDevice($input: UpsertDeviceInput!) {\n    upsertDevice(input: $input) {\n      id\n      name\n      kind\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UpsertAutomation($input: UpsertAutomationInput!) {\n    upsertAutomation(input: $input) {\n      id\n      name\n      trigger\n      triggerAt\n      position\n      topicId\n      triggerKey\n      triggerValue\n      isControlShown\n    }\n  }\n"): (typeof documents)["\n  mutation UpsertAutomation($input: UpsertAutomationInput!) {\n    upsertAutomation(input: $input) {\n      id\n      name\n      trigger\n      triggerAt\n      position\n      topicId\n      triggerKey\n      triggerValue\n      isControlShown\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

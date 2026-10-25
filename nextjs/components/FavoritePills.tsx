@@ -1,10 +1,11 @@
 'use client';
 
+import { sortArray } from '@/lib/utilities';
 import FavoritePill from './FavoritePill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
-import { MousePointer2 } from "lucide-react";
 import { redirect } from 'next/navigation';
 import { Favorite } from "puddle-graphql";
+import { useMemo } from 'react';
 
 interface FavoritePillsProps {
     queryRef: QueryRef<any>;
@@ -18,11 +19,15 @@ export default function FavoritePills({ queryRef }: FavoritePillsProps) {
         redirect('/charts');
     };
 
+    const sortedFavorites = useMemo(() => {
+        return sortArray(favorites, 'name');
+    }, [favorites]);
+
     let pillKey = 0;
     return (
         <div className="bg-base-100 pb-4">
             <div className="flex flex-wrap gap-3 mb-8">
-                {favorites.map((favorite) => {
+                {sortedFavorites.map((favorite) => {
                     pillKey++;
                     return <FavoritePill favorite={favorite} onClick={() => handleRowClick(favorite)} key={pillKey} />;
                 })}

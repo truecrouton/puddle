@@ -6,6 +6,8 @@ import { iconMap as automationIconMap } from './AutomationPill';
 import { Schedule } from 'puddle-graphql';
 import { CircleQuestionMark } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { useMemo } from 'react';
+import { sortArray } from '@/lib/utilities';
 
 interface ScheduleTableProps {
     queryRef: QueryRef<any>;
@@ -14,6 +16,11 @@ interface ScheduleTableProps {
 export default function ScheduleTable({ queryRef }: ScheduleTableProps) {
     const { data } = useReadQuery(queryRef);
     const schedule = data.schedule as Schedule[];
+
+    const sortedSchedule = useMemo(() => {
+        return sortArray(schedule, 'name');
+    }, [schedule]);
+
     return (
         <div className="overflow-x-auto rounded-box border border-base-content/5 bg-base-100">
             <table className="table">
@@ -25,7 +32,7 @@ export default function ScheduleTable({ queryRef }: ScheduleTableProps) {
                     </tr>
                 </thead>
                 <tbody>
-                    {schedule.map((s) => (
+                    {sortedSchedule.map((s) => (
                         <tr key={s.name} >
                             <th className="font-semibold">{s.name}</th>
                             <td className="whitespace-nowrap">

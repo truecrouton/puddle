@@ -3,6 +3,8 @@ import TopicsTable from "@/components/TopicsTable";
 import { GET_TOPIC_DETAILS } from "@/lib/queries";
 import { connection } from 'next/server';
 import { ProtectedPage } from '@/components/ProtectedPage';
+import Link from 'next/link';
+import { ArrowUp } from 'lucide-react';
 
 async function PreloadedDevices() {
   // Tells Next.js this segment runs at request-time (compatible with cacheComponents)
@@ -21,8 +23,12 @@ async function PreloadedDevices() {
 async function Home() {
   return (
     <main className="max-w-4xl mx-auto p-4">
-      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Peruse your mqtt topics</h1>
-      <h3 className="text-2xl font-normal mb-6">These are the topics read from your mqtt message broker.</h3>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+        <Link className="btn btn-primary btn-sm btn-circle mr-3" href='/dashboard'>
+          <ArrowUp className='h-6 w-6' />
+        </Link>
+        Peruse your mqtt topics
+      </h1>
       <PreloadedDevices />
     </main>
   );

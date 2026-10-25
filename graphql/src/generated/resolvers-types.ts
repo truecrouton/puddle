@@ -91,18 +91,37 @@ export type IdInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  deleteAutomation: Scalars['Boolean']['output'];
+  deleteDevice: Scalars['Boolean']['output'];
   deleteExpression: Scalars['Boolean']['output'];
+  deleteTopic: Scalars['Boolean']['output'];
   setDevice: Scalars['Boolean']['output'];
   signIn: Scalars['Boolean']['output'];
   signOut: Scalars['Boolean']['output'];
   signUp: Scalars['Boolean']['output'];
+  upsertAutomation: Automation;
   upsertDevice: Device;
   upsertExpression: Expression;
   upsertTopic: Topic;
 };
 
 
+export type MutationDeleteAutomationArgs = {
+  input: IdInput;
+};
+
+
+export type MutationDeleteDeviceArgs = {
+  input: IdInput;
+};
+
+
 export type MutationDeleteExpressionArgs = {
+  input: IdInput;
+};
+
+
+export type MutationDeleteTopicArgs = {
   input: IdInput;
 };
 
@@ -119,6 +138,11 @@ export type MutationSignInArgs = {
 
 export type MutationSignUpArgs = {
   input: SignUpInput;
+};
+
+
+export type MutationUpsertAutomationArgs = {
+  input: UpsertAutomationInput;
 };
 
 
@@ -146,6 +170,7 @@ export type Query = {
   devices: Array<Device>;
   favorites: Array<Favorite>;
   schedule: Array<Schedule>;
+  topic?: Maybe<Topic>;
   topics: Array<Topic>;
 };
 
@@ -159,6 +184,11 @@ export type QueryDeviceArgs = {
   id: Scalars['Int']['input'];
 };
 
+
+export type QueryTopicArgs = {
+  id: Scalars['Int']['input'];
+};
+
 export type Schedule = {
   __typename?: 'Schedule';
   automations: Array<Automation>;
@@ -168,7 +198,7 @@ export type Schedule = {
 
 export type SetDeviceInput = {
   deviceId: Scalars['Int']['input'];
-  state: Scalars['String']['input'];
+  state: Scalars['Int']['input'];
 };
 
 export type SignInInput = {
@@ -184,13 +214,33 @@ export type SignUpInput = {
   username: Scalars['String']['input'];
 };
 
+export type Status = {
+  __typename?: 'Status';
+  name: Scalars['String']['output'];
+  pairId: Scalars['Int']['output'];
+  value: Scalars['String']['output'];
+};
+
 export type Topic = {
   __typename?: 'Topic';
   automations?: Maybe<Array<Automation>>;
   devices?: Maybe<Array<Device>>;
   id: Scalars['Int']['output'];
+  status?: Maybe<Array<Status>>;
   topic: Scalars['String']['output'];
   usedInAutomations?: Maybe<Array<Automation>>;
+};
+
+export type UpsertAutomationInput = {
+  id: Scalars['Int']['input'];
+  isControlShown?: InputMaybe<Scalars['Boolean']['input']>;
+  name: Scalars['String']['input'];
+  position?: InputMaybe<Scalars['String']['input']>;
+  topicId?: InputMaybe<Scalars['Int']['input']>;
+  trigger: Scalars['String']['input'];
+  triggerAt?: InputMaybe<Scalars['String']['input']>;
+  triggerKey?: InputMaybe<Scalars['String']['input']>;
+  triggerValue?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type UpsertDeviceInput = {
@@ -320,8 +370,10 @@ export type ResolversTypes = {
   SetDeviceInput: SetDeviceInput;
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
+  Status: ResolverTypeWrapper<Status>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Topic: ResolverTypeWrapper<Topic>;
+  UpsertAutomationInput: UpsertAutomationInput;
   UpsertDeviceInput: UpsertDeviceInput;
   UpsertExpressionInput: UpsertExpressionInput;
   UpsertTopicInput: UpsertTopicInput;
@@ -345,8 +397,10 @@ export type ResolversParentTypes = {
   SetDeviceInput: SetDeviceInput;
   SignInInput: SignInInput;
   SignUpInput: SignUpInput;
+  Status: Status;
   String: Scalars['String']['output'];
   Topic: Topic;
+  UpsertAutomationInput: UpsertAutomationInput;
   UpsertDeviceInput: UpsertDeviceInput;
   UpsertExpressionInput: UpsertExpressionInput;
   UpsertTopicInput: UpsertTopicInput;
@@ -422,11 +476,15 @@ export type FavoriteResolvers<ContextType = any, ParentType extends ResolversPar
 };
 
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
+  deleteAutomation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteAutomationArgs, 'input'>>;
+  deleteDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteDeviceArgs, 'input'>>;
   deleteExpression?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteExpressionArgs, 'input'>>;
+  deleteTopic?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTopicArgs, 'input'>>;
   setDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDeviceArgs, 'input'>>;
   signIn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'input'>>;
   signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   signUp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
+  upsertAutomation?: Resolver<ResolversTypes['Automation'], ParentType, ContextType, RequireFields<MutationUpsertAutomationArgs, 'input'>>;
   upsertDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationUpsertDeviceArgs, 'input'>>;
   upsertExpression?: Resolver<ResolversTypes['Expression'], ParentType, ContextType, RequireFields<MutationUpsertExpressionArgs, 'input'>>;
   upsertTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationUpsertTopicArgs, 'input'>>;
@@ -441,6 +499,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
   favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType>;
   schedule?: Resolver<Array<ResolversTypes['Schedule']>, ParentType, ContextType>;
+  topic?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType, RequireFields<QueryTopicArgs, 'id'>>;
   topics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType>;
 };
 
@@ -450,10 +509,17 @@ export type ScheduleResolvers<ContextType = any, ParentType extends ResolversPar
   runsAt?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
 };
 
+export type StatusResolvers<ContextType = any, ParentType extends ResolversParentTypes['Status'] = ResolversParentTypes['Status']> = {
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  pairId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
 export type TopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = {
   automations?: Resolver<Maybe<Array<ResolversTypes['Automation']>>, ParentType, ContextType>;
   devices?: Resolver<Maybe<Array<ResolversTypes['Device']>>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  status?: Resolver<Maybe<Array<ResolversTypes['Status']>>, ParentType, ContextType>;
   topic?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   usedInAutomations?: Resolver<Maybe<Array<ResolversTypes['Automation']>>, ParentType, ContextType>;
 };
@@ -476,6 +542,7 @@ export type Resolvers<ContextType = any> = {
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Schedule?: ScheduleResolvers<ContextType>;
+  Status?: StatusResolvers<ContextType>;
   Topic?: TopicResolvers<ContextType>;
   User?: UserResolvers<ContextType>;
 };

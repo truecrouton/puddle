@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ControlModal from './ControlModal';
 import ControlPill from './ControlPill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
 import { Control } from 'puddle-graphql';
+import { sortArray } from '@/lib/utilities';
 
 interface ControlPillsProps {
     queryRef: QueryRef<any>;
@@ -24,11 +25,15 @@ export default function ControlPills({ queryRef }: ControlPillsProps) {
 
     const onClose = () => setIsModalOpen(false);
 
+    const sortedControls = useMemo(() => {
+        return sortArray(controls, 'name');
+    }, [controls]);
+
     return (
         <>
             <div className="bg-base-100 pb-8">
                 <div className="flex flex-wrap gap-3">
-                    {controls.map((control) => (
+                    {sortedControls.map((control) => (
                         <ControlPill control={control} onClick={() => handleRowClick(control)} key={control.deviceId} />
                     ))}
                 </div>

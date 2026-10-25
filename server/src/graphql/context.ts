@@ -3,10 +3,13 @@ import Database from "better-sqlite3";
 import { db as globalDb } from "../storage";
 import { decrypt } from "./session";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { MqttClient } from "mqtt";
+import { mqttClient } from "../main";
 
 export interface ApolloServerContext {
     userId: number;
     db: Database.Database;
+    mqtt: MqttClient;
     request: FastifyRequest,
     reply: FastifyReply;
 }
@@ -24,6 +27,7 @@ export const apolloContextFunction: ApolloFastifyContextFunction<ApolloServerCon
     return {
         userId: user ? user.id : 0,
         db: globalDb,
+        mqtt: mqttClient,
         request,
         reply
     };

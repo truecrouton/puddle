@@ -3,6 +3,8 @@ import ScheduleTable from "@/components/ScheduleTable";
 import { GET_SCHEDULE } from "@/lib/queries";
 import { connection } from 'next/server';
 import { ProtectedPage } from '@/components/ProtectedPage';
+import Link from 'next/link';
+import { ArrowUp } from 'lucide-react';
 
 async function PreloadedDevices() {
   // Tells Next.js this segment runs at request-time (compatible with cacheComponents)
@@ -21,7 +23,12 @@ async function PreloadedDevices() {
 async function Home() {
   return (
     <main className="max-w-4xl mx-auto p-4">
-      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Today's scheduled automations</h1>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+        <Link className="btn btn-primary btn-sm btn-circle mr-3" href='/dashboard'>
+          <ArrowUp className='h-6 w-6' />
+        </Link>
+        Today's scheduled automations
+      </h1>
       <h3 className="text-2xl font-normal mb-6">Change the schedule under automations. </h3>
       <PreloadedDevices />
     </main>

@@ -20,13 +20,14 @@ import { loadPlugins } from "./plugin";
 import { puddlePathRoot } from './path-anchor';
 import { initFastify } from './graphql/server';
 
+export const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
+
 const puddleInit = async () => {
     dotenv.config({ path: `${puddlePathRoot}/../puddle.env` });
 
     storageInit({ fileMustExist: true });
     cacheInit();
 
-    const client = mqtt.connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
     process.env.BASE_TOPIC = process.env.BASE_TOPIC || 'zigbee2mqtt';
 
     process.on('SIGINT', function () {
@@ -34,15 +35,15 @@ const puddleInit = async () => {
             .then(() => process.exit(0));
     });
 
-    client.on('connect', function () {
-        client.subscribe(`${process.env.BASE_TOPIC}/#`, function (err) {
+    mqttClient.on('connect', function () {
+        mqttClient.subscribe(`${process.env.BASE_TOPIC}/#`, function (err) {
             if (err) {
                 console.error('Could not connect', err);
             }
         });
     });
 
-    client.on('message', function (topic, message) {
+    mqttClient.on('message', function (topic, message) {
         const messageString = message.toString();
         storeMessage(topic, messageString);
         triggerTopicAutomations(topic, messageString);
@@ -54,7 +55,7 @@ const puddleInit = async () => {
         .split(',')
         .map(item => item.trim())
         .filter(Boolean);
-    loadPlugins(`${puddlePathRoot}/plugin/`, pluginDirs, { logger: console, mqttClient: client });
+    loadPlugins(`${puddlePathRoot}/plugin/`, pluginDirs, { logger: console, mqttClient: mqttClient });
 
     initFastify();
 

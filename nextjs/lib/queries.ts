@@ -1,8 +1,26 @@
 import { graphql } from "puddle-graphql";
 
+export const DELETE_AUTOMATION = graphql(`
+  mutation DeleteAutomation($input: IdInput!) {
+    deleteAutomation(input: $input)
+  }
+`);
+
+export const DELETE_DEVICE = graphql(`
+  mutation DeleteDevice($input: IdInput!) {
+    deleteDevice(input: $input)
+  }
+`);
+
 export const DELETE_EXPRESSION = graphql(`
   mutation DeleteExpression($input: IdInput!) {
     deleteExpression(input: $input)
+  }
+`);
+
+export const DELETE_TOPIC = graphql(`
+  mutation DeleteTopic($input: IdInput!) {
+    deleteTopic(input: $input)
   }
 `);
 
@@ -125,6 +143,18 @@ export const GET_SCHEDULE = graphql(`
     }
   `);
 
+export const GET_TOPIC_STATUS = graphql(`
+    query GetTopicStatus($id: Int!) {
+      topic(id: $id) {
+        id
+        status {
+          name
+          value
+        }
+      }
+    }
+  `);
+
 export const GET_TOPICS = graphql(`
     query GetTopics {
       topics {
@@ -188,6 +218,22 @@ export const UPSERT_DEVICE = graphql(`
       id
       name
       kind
+    }
+  }
+`);
+
+export const UPSERT_AUTOMATION = graphql(`
+  mutation UpsertAutomation($input: UpsertAutomationInput!) {
+    upsertAutomation(input: $input) {
+      id
+      name
+      trigger
+      triggerAt
+      position
+      topicId
+      triggerKey
+      triggerValue
+      isControlShown
     }
   }
 `);

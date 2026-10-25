@@ -22,10 +22,46 @@ export const zodSignUpInputSchema = z.object({
     authPhrase: z.string().min(8, 'Auth phrase must be at least 8 characters.').max(30, 'Auth phrase must be less than 30 characters.'),
 });
 
+export const zodUpsertAutomationSchema = z.object({
+    id: z.coerce.number().int().nonnegative(),
+    name: z.string().min(1, 'Please provide a name.').max(50, 'Name must be less than 50 characters.'),
+    trigger: z.string().refine(
+        (val) => ["time", "sun", "topic", "user"].includes(val),
+        { error: 'Please select a trigger.' }
+    ),
+    triggerAt: z.string().max(5, 'Trigger at must be in 24 hour HH:MM format.').nullable(),
+    position: z.string().max(15).nullable(),
+    topicId: z.coerce.number().int().nonnegative(),
+    triggerKey: z.string().max(30, 'Trigger key must be less than 30 characters.').nullable(),
+    triggerValue: z.string().max(20, 'Trigger value must be less than 20 characters.').nullable(),
+    isControlShown: z.boolean(),
+}).refine((data) => {
+    if (data.trigger == 'time') {
+        const result = z.iso.time({ precision: -1 }).safeParse(data.triggerAt);
+        return result.success;
+    }
+    return true;
+}, { error: 'Please select a topic.', path: ['topicId'] }).refine((data) => {
+    if (data.trigger == 'sun') return ["solarNoon", "nadir", "sunrise", "sunset", "sunriseEnd", "sunsetStart", "dawn", "dusk", "nauticalDawn", "nauticalDusk", "nightEnd", "night", "goldenHourEnd", "goldenHour", "morning", "afternoon", "lateMorning", "evening"].includes(data.position ?? '');
+    return true;
+}, { error: 'Incorrect position.', path: ['position'] }).refine((data) => {
+    if (data.trigger == 'topic') return data.topicId > 0;
+    return true;
+}, { error: 'Please select a topic.', path: ['topicId'] }).refine((data) => {
+    if (data.trigger == 'topic') return data.triggerKey?.length ?? 0 > 0;
+    return true;
+}, { error: 'Please provide a trigger key.', path: ['triggerKey'] }).refine((data) => {
+    if (data.trigger == 'topic') return data.triggerValue?.length ?? 0 > 0;
+    return true;
+}, { error: 'Please provide a trigger value.', path: ['triggerValue'] });
+
 export const zodUpsertTopicInputSchema = z.object({
     id: z.coerce.number().int().nonnegative(),
-    topic: z.string().min(1, 'Please provide a topic.').max(100, 'Topic must be less than 100 characters.')
-});
+    topic: z.string().min(1, 'Please provide a topic.').max(200, 'Topic must be less than 200 characters.')
+}).refine((data) => {
+    if (data.id > 0 && data.topic.length > 0) return false;
+    return true;
+}, { error: 'Existing topics cannot be modified.', path: ['topic'] });
 
 export const zodUpsertDeviceSchema = z.object({
     id: z.coerce.number().int().nonnegative(),
@@ -60,7 +96,7 @@ export const zodUpsertExpressionSchema = z.object({
     if (data.kind == 'if') return data.expression?.length ?? 0 > 0;
     return true;
 }, { error: 'Please provide an expression.', path: ['expression'] }).refine((data) => {
-    if (["notify", "publish", "wait", "device"].includes(data.kind)) return data.conditionalExpressionId > 0;
+    if (data.isElseStep) return data.conditionalExpressionId > 0;
     return true;
 }, { error: 'Invalid conditional expression.', path: ['conditionalExpressionId'] }).refine((data) => {
     if (data.kind == 'publish') return data.topicId > 0;

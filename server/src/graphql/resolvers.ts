@@ -1,4 +1,4 @@
-import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput, zodUpsertExpressionSchema, UpsertExpressionInput, IdInput } from 'puddle-graphql';
+import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput, zodUpsertExpressionSchema, UpsertExpressionInput, IdInput, zodUpsertAutomationSchema, UpsertAutomationInput, Status } from 'puddle-graphql';
 import { celsiusToFahrenheit, keysToCamelCase } from '../helper';
 import { encrypt } from './session';
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
@@ -7,9 +7,9 @@ import { GraphQLError } from 'graphql';
 import { zodEmptyInputSchema, zodIdInputSchema, zodSetDeviceInputSchema, zodSignInInputSchema, zodSignUpInputSchema, zodUpsertDeviceSchema, zodUpsertTopicInputSchema } from './zod-schemas';
 import dotenv from 'dotenv';
 import path from 'path';
-import { cacheGet } from '../storage';
+import { cacheGet, cachePairsGet } from '../storage';
 import { scheduledJobs } from 'node-schedule';
-import { dailySchedulerJob } from '../schedule';
+import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from '../schedule';
 import { ApolloServerContext } from './context';
 import { getTopicIds } from '../expressions';
 
@@ -86,6 +86,11 @@ export const resolvers: Resolvers = {
             const camelAutomations = automations.map((a) => keysToCamelCase(a) as Automation);
             return camelAutomations;
         },
+        status: async (parent: { id: number; }, _input, context: ApolloServerContext) => {
+            const cachedPairs = cachePairsGet(parent.id) as Status[];
+            if (!cachedPairs) return [];
+            return cachedPairs;
+        },
         usedInAutomations: async (parent: { id: number; }, _input, context: ApolloServerContext) => {
             const expressionStmt = context.db.prepare('SELECT automation_id as id, automations.name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
             const conditionalStmt = context.db.prepare('SELECT automation_id as id, name, trigger FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
@@ -134,10 +139,9 @@ export const resolvers: Resolvers = {
         }),
         device: validateInput(zodIdInputSchema, async (_parent, { id }: { id: number; }, context: ApolloServerContext) => {
             const stmt = context.db.prepare('SELECT * FROM devices WHERE id=?');
-            const device = stmt.get(id) as Device;
+            const device = stmt.get(id);
 
             if (!device) return null;
-
             return keysToCamelCase<Device>(device);
         }),
         devices: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
@@ -169,6 +173,13 @@ export const resolvers: Resolvers = {
             const camelSchedule = schedule.map((s) => keysToCamelCase(s) as Schedule);
             return camelSchedule;
         }),
+        topic: validateInput(zodIdInputSchema, async (_parent, input, context: ApolloServerContext) => {
+            const stmt = context.db.prepare('SELECT id, topic from topics where id=?');
+            const topic = stmt.get(input.id);
+
+            if (!topic) return null;
+            return keysToCamelCase<Topic>(topic);
+        }),
         topics: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
             const stmt = context.db.prepare('SELECT * FROM topics');
             const topics = stmt.all() as Record<string, any>[];
@@ -177,19 +188,76 @@ export const resolvers: Resolvers = {
         }),
     },
     Mutation: {
+        deleteAutomation: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
+            context.db.transaction(() => {
+                context.db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(input.id);
+                context.db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(input.id);
+                context.db.prepare('DELETE FROM automations WHERE id=?').run(input.id);
+            })();
+
+            return true;
+        }),
+        deleteDevice: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
+            const automations = context.db.prepare('SELECT name FROM automation_expressions LEFT JOIN automations ON automations.id=automation_expressions.automation_id WHERE device_id=?').all(input.id) as Automation[];
+            if (automations.length) throw new GraphQLError(`The device must be removed from these automations before it can be deleted: ${automations.map((a) => a.name).join(', ')}.`);
+
+            context.db.transaction(() => {
+                context.db.prepare('DELETE FROM automations WHERE id IN (SELECT automation_id FROM automation_expressions WHERE device_id=?)').run(input.id);
+                context.db.prepare('DELETE FROM automation_expressions WHERE device_id=?').run(input.id);
+                context.db.prepare('DELETE FROM devices WHERE id=?').run(input.id);
+            })();
+
+            return true;
+        }),
         deleteExpression: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
-            context.db.prepare('DELETE FROM automation_expressions WHERE conditional_expression_id=?').run(input.id);
-            context.db.prepare('DELETE FROM automation_expressions WHERE id=?').run(input.id);
+            context.db.transaction(() => {
+                context.db.prepare('DELETE FROM automation_expressions WHERE conditional_expression_id=?').run(input.id);
+                context.db.prepare('DELETE FROM automation_expressions WHERE id=?').run(input.id);
+            })();
+            return true;
+        }),
+        deleteTopic: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
+            const devices = context.db.prepare('SELECT id, name FROM devices where topic_id=?').all(input.id);
+            const automations = context.db.prepare('SELECT id, name FROM automations WHERE topic_id=?').all(input.id);
+            const charts = context.db.prepare('SELECT id, name FROM charts WHERE topic_id=?').all(input.id);
+            const expressionStmt = context.db.prepare('SELECT automation_id as id, automations.name FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
+            const conditionalStmt = context.db.prepare('SELECT automation_id as id, name FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
+
+            const usedIn = new Map();
+            expressionStmt.all(input.id, input.id).forEach((e: any) => usedIn.set(e.automation_id, e));
+            conditionalStmt.all(input.id).forEach((c: any) => usedIn.set(c.automation_id, c));
+
+            if (devices.length || automations.length || charts.length || [...usedIn.values()].length) throw new GraphQLError('The topic must be removed from all devices, automations, and charts before it can be deleted.');
+
+            context.db.transaction(() => {
+                context.db.prepare('DELETE FROM topics WHERE id=?').run(input.id);
+                context.db.prepare('DELETE FROM pairs WHERE topic_id=?').run(input.id);
+            })();
 
             return true;
         }),
         setDevice: validateInput(zodSetDeviceInputSchema, async (_parent, { input }: { input: SetDeviceInput; }, context: ApolloServerContext) => {
-            console.info("setDevice", input);
+            const device = context.db.prepare('SELECT topic, kind, set_key, set_suffix, value_on, value_off FROM devices LEFT JOIN topics on topics.id=devices.topic_id WHERE devices.id=?').get(input.deviceId) as Device;
+
+            let message;
+            switch (device.kind) {
+                case "toggleable":
+                    message = { [device.setKey as string]: input.state > 0 ? device.valueOn : device.valueOff };
+                    break;
+                case "dimmable":
+                case "positionable":
+                    message = { [device.setKey as string]: input.state };
+                    break;
+            }
+
+            if (process.env.NODE_ENV === 'test') return true;
+
+            const topic = [device.topic, device.setSuffix].join('/');
+            context.mqtt.publish(topic, JSON.stringify(message));
 
             return true;
         }),
         signIn: validateInput(zodSignInInputSchema, async (_parent, { input }: { input: SignInInput; }, context: ApolloServerContext) => {
-            console.log(input);
             const user = context.db.prepare('SELECT id, password, is_admin FROM users WHERE username=?').get(input.username) as User;
             if (!user) throw new GraphQLError(
                 'Invalid username or password',
@@ -243,11 +311,23 @@ export const resolvers: Resolvers = {
             context.db.prepare('INSERT INTO USERS (username, password, name, is_admin) VALUES(?, ?, ?, ?) RETURNING *').run(input.username, hashPassword(input.password), input.name, input.isAdmin ? 1 : 0);
             return true;
         }, { protected: false }),
-        upsertDevice: validateInput(zodUpsertDeviceSchema, async (_parent, { input }: { input: UpsertDeviceInput; }, context: ApolloServerContext) => {
-            const { id } = input;
+        upsertAutomation: validateInput(zodUpsertAutomationSchema, async (_parent, { input }: { input: UpsertAutomationInput; }, context: ApolloServerContext) => {
+            const automation = input.id > 0 ?
+                context.db.prepare('UPDATE automations SET name=?, trigger=?, trigger_at=?, position=?, topic_id=?, trigger_key=?, trigger_value=?, is_control_shown=? WHERE id=? RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0, input.id) as Automation :
+                context.db.prepare('INSERT INTO automations (name, trigger, trigger_at, position, topic_id, trigger_key, trigger_value, is_control_shown) VALUES(?, ?, ?, ?, ?, ?, ?, ?) RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0) as Automation;
 
-            const device = id > 0 ?
-                context.db.prepare('UPDATE devices SET topic_id=?, name=?, kind=?, set_key=?, state_key=?, set_suffix=?, value_on=?, value_off=? WHERE id=? RETURNING *').get(input.topicId, input.name, input.kind, input.setKey, input.stateKey, input.setSuffix, input.valueOn, input.valueOff, id) as Device :
+            if (input.trigger === "sun") {
+                scheduleSunAutomation(input.position!);
+            }
+            else if (input.trigger === "time") {
+                scheduleTimeAutomation(input.triggerAt!);
+            }
+
+            return keysToCamelCase(automation);
+        }),
+        upsertDevice: validateInput(zodUpsertDeviceSchema, async (_parent, { input }: { input: UpsertDeviceInput; }, context: ApolloServerContext) => {
+            const device = input.id > 0 ?
+                context.db.prepare('UPDATE devices SET topic_id=?, name=?, kind=?, set_key=?, state_key=?, set_suffix=?, value_on=?, value_off=? WHERE id=? RETURNING *').get(input.topicId, input.name, input.kind, input.setKey, input.stateKey, input.setSuffix, input.valueOn, input.valueOff, input.id) as Device :
                 context.db.prepare('INSERT INTO devices (topic_id, name, kind, set_key, state_key, set_suffix, value_on, value_off) VALUES(?, ?, ?, ?, ?, ?, ?, ?) RETURNING *').get(input.topicId, input.name, input.kind, input.setKey, input.stateKey, input.setSuffix, input.valueOn, input.valueOff) as Device;
 
             return keysToCamelCase(device);
@@ -265,11 +345,9 @@ export const resolvers: Resolvers = {
                 }
             }
 
-            const isElseStep = input.isElseStep ? 1 : 0;
-
             const result = input.id > 0 ?
-                context.db.prepare('UPDATE automation_expressions SET automation_id=?, kind=?, expression=?, conditional_expression_id=?, topic_id=?, message=?, device_id=?, state=?, is_else_step=? WHERE id=?').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, isElseStep, input.id) :
-                context.db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, isElseStep);
+                context.db.prepare('UPDATE automation_expressions SET automation_id=?, kind=?, expression=?, conditional_expression_id=?, topic_id=?, message=?, device_id=?, state=?, is_else_step=? WHERE id=?').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0, input.id) :
+                context.db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0);
 
             const stmt = context.db.prepare('SELECT automation_expressions.id, automation_id, automation_expressions.kind, expression, is_else_step, automation_expressions.topic_id, conditional_expression_id, topic, message, device_id, devices.name as device_name, devices.kind as device_kind, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE automation_expressions.id=?');
             const expression = stmt.get(input.id ? input.id : result.lastInsertRowid) as Expression;

@@ -3,6 +3,8 @@ import AutomationList from "@/components/AutomationList";
 import { GET_AUTOMATION } from "@/lib/queries";
 import { connection } from 'next/server';
 import { ProtectedPage } from '@/components/ProtectedPage';
+import Link from 'next/link';
+import { ArrowUp } from 'lucide-react';
 
 interface PreloadedAutomationProps {
   id: number;
@@ -33,7 +35,12 @@ async function Home({ params }: PageProps) {
 
   return (
     <main className="max-w-4xl mx-auto p-4">
-      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Setup this automation</h1>
+      <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
+        <Link className="btn btn-primary btn-sm btn-circle mr-3" href='/automations'>
+          <ArrowUp className='h-6 w-6' />
+        </Link>
+        Setup this automation
+      </h1>
       <PreloadedAutomation id={id} />
     </main>
   );

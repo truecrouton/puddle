@@ -11,9 +11,24 @@ export function ApolloWrapper({ children }: { children: ReactNode; }) {
             credentials: 'include', // Used in the browser after hydration
         });
 
+        const cache = new InMemoryCache({
+            typePolicies: {
+                Query: {
+                    fields: {
+                        automations: {
+                            // Tell Apollo how to merge existing and incoming automation lists
+                            merge(existing, incoming) {
+                                return incoming;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
         return new ApolloClient({
             link: httpLink,
-            cache: new InMemoryCache
+            cache: cache
         });
     };
 

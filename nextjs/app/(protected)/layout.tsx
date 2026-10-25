@@ -16,7 +16,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode; }) 
       <ApolloWrapper>
         <ProtectedNavBar />
         <main className="flex-1 p-6">
-
           {children}
         </main>
         <Footer />

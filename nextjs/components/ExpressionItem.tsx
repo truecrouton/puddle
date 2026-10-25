@@ -28,22 +28,22 @@ export default function ExpressionItem({ conditional, onClick }: ExpressionItemP
             {conditional.kind == 'if' ? (
                 <>
                     <span className="text-xl text-primary font-semibold shrink-0">IF</span>
-                    <span className="text-secondary">{conditional.expression}</span>
+                    <span className="text-secondary text-left">{conditional.expression}</span>
                 </>
             ) :
                 conditional.kind == 'device' ? (
                     <>
                         <IconComponent className="w-5 h-5 shrink-0" />
                         <span className="text-primary shrink-0">{conditional.kind}</span >
-                        <span className="text-accent">{conditional.deviceName}</span>
-                        <span className="text-secondary">{transformState(conditional)}</span>
+                        <span className="text-accent text-left">{conditional.deviceName}</span>
+                        <span className="text-secondary text-left">{transformState(conditional)}</span>
                     </>
                 ) : (
                     <>
                         <IconComponent className="w-5 h-5 shrink-0" />
                         <span className="text-primary shrink-0">{conditional.kind}</span >
-                        <span className="text-accent">{conditional.topic}</span>
-                        <span className="text-secondary">{conditional.message}</span>
+                        <span className="text-accent text-left">{conditional.topic}</span>
+                        <span className="text-secondary text-left">{conditional.message}</span>
                     </>
                 )}
         </button >

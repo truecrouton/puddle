@@ -1,6 +1,6 @@
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect } from 'react';
 import BaseModal from './BaseModal';
-import { GET_DEVICE, UPSERT_DEVICE } from '@/lib/queries';
+import { DELETE_DEVICE, GET_DEVICE, UPSERT_DEVICE } from '@/lib/queries';
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { InputFieldset } from './InputFieldset';
@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { TopicSelectFieldset } from './TopicsSelectFieldset';
-import { zodUpsertDeviceSchema } from 'puddle-graphql';
+import { Device, zodUpsertDeviceSchema } from 'puddle-graphql';
 
 interface DeviceModalProps {
     isOpen: boolean;
@@ -19,9 +19,36 @@ interface DeviceModalProps {
 }
 
 export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: DeviceModalProps) {
-    const { data, loading, error: getDeviceError } = useQuery(GET_DEVICE,
-        isOpen && deviceId ? { variables: { id: deviceId }, fetchPolicy: 'cache-and-network' } : skipToken);
-    const [upsertDevice, { loading: updatePending, error: updateError }] = useMutation(UPSERT_DEVICE);
+    const { data, loading, error: getDeviceError } = useQuery(GET_DEVICE, isOpen && deviceId ? { variables: { id: deviceId }, fetchPolicy: 'cache-and-network' } : skipToken);
+    const [deleteDevice, { loading: deletePending, error: deleteError, reset: resetDeleteMutation }] = useMutation(DELETE_DEVICE, {
+        update(cache, { data }) {
+            if (!data?.deleteDevice.valueOf) return;
+
+            cache.modify({
+                fields: {
+                    devices(existingDevices = [], { readField }) {
+                        return existingDevices.filter((d: Device) => {
+                            const existingDeviceId = readField('id', d);
+                            return existingDeviceId != deviceId;
+                        });
+                    },
+                },
+            });
+        }
+    });
+    const [upsertDevice, { loading: updatePending, error: updateError, reset: resetUpsertMutation }] = useMutation(UPSERT_DEVICE, {
+        update(cache, { data }) {
+            if (deviceId || !data?.upsertDevice) return;
+
+            cache.modify({
+                fields: {
+                    devices(existingDevices = [], { toReference }) {
+                        return [...existingDevices, toReference(data.upsertDevice)];
+                    },
+                },
+            });
+        }
+    });
 
     const device = data?.device;
 
@@ -30,6 +57,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
         register,
         handleSubmit,
         control,
+        reset,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(zodUpsertDeviceSchema),
@@ -44,7 +72,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
             valueOn: device.valueOn ?? '',
             valueOff: device.valueOff ?? ''
         } : {
-            id: deviceId,
+            id: 0,
             topicId: 0,
             name: '',
             kind: '',
@@ -56,20 +84,35 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
         }
     });
 
+    useEffect(() => {
+        resetDeleteMutation();
+        resetUpsertMutation();
+    }, [isOpen]);
+
     const onSubmit = async (data: DeviceData) => {
         await upsertDevice({
             variables: {
                 input: data
             }
         });
+        reset();
         onSuccess();
     };
 
-    // ALL HOOKS ABOVE Early Return (unconditional)
-    if (!device) return null;
+    const onDelete = async (deviceId: number) => {
+        await deleteDevice({
+            variables: {
+                input: {
+                    id: deviceId,
+                }
+            }
+        });
+        reset();
+        onSuccess();
+    };
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} title={"Device"} alertErrors={[getDeviceError?.message, updateError?.message]}>
+        <BaseModal isOpen={isOpen} onClose={onClose} title={`${deviceId ? 'Edit' : 'Add'} Device`} alertErrors={[getDeviceError?.message, deleteError?.message, updateError?.message]}>
             <form onSubmit={handleSubmit(onSubmit)} key={deviceId ?? 'new'}>
                 <fieldset disabled={loading} >
                     <input type="hidden" name="id" value={deviceId} />
@@ -96,7 +139,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
                         <InputFieldset label='Value On' error={errors.valueOn} {...register("valueOn")} />
                         <InputFieldset label='Value Off' error={errors.valueOn} {...register("valueOff")} />
                     </div>
-                    <ModalActions isPending={updatePending} onClose={onClose} />
+                    <ModalActions isPending={updatePending || deletePending} onClose={onClose} onDelete={deviceId ? () => onDelete(deviceId) : undefined} />
                 </fieldset>
             </form>
         </BaseModal>

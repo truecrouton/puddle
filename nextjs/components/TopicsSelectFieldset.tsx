@@ -1,4 +1,4 @@
-import { FieldError, useController } from "react-hook-form";
+import { useController } from "react-hook-form";
 import { GET_TOPICS } from "@/lib/queries";
 import { useSuspenseQuery } from "@apollo/client/react";
 
