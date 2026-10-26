@@ -1,6 +1,6 @@
 import { useController } from "react-hook-form";
 import { GET_DEVICE_STUBS } from "@/lib/queries";
-import { useSuspenseQuery } from "@apollo/client/react";
+import { useQuery, } from "@apollo/client/react";
 import { Device } from "puddle-graphql";
 
 export interface DeviceSelectFieldsetProps {
@@ -11,27 +11,26 @@ export interface DeviceSelectFieldsetProps {
 }
 
 export const DeviceSelectFieldset = ({ label, error, control, name }: DeviceSelectFieldsetProps) => {
-    const { data } = useSuspenseQuery(GET_DEVICE_STUBS);
+    const { data, loading, error: queryError } = useQuery(GET_DEVICE_STUBS);
 
     const {
         field: { value, onChange, onBlur, ref },
-    } = useController({
-        name,
-        control,
-    });
+    } = useController({ name, control, });
 
     return (
         <fieldset className="fieldset">
             <legend className="fieldset-legend">{label}</legend>
             <select className="select w-full" ref={ref} value={value ?? ""} onChange={(e) => onChange(e.target.value)} onBlur={onBlur}>
-                <option key="0" value="0">Select a Device</option>
-                {data.devices.map((device) => (
+                <option value="0">
+                    {loading ? "Loading devices..." : "Select a Device"}
+                </option>
+                {data?.devices?.map((device) => (
                     <option key={device.id} value={device.id}>
                         {device.name}
                     </option>
                 ))}
             </select>
-            <p className="label text-error-content">{error}</p>
+            <p className="label">{error}</p>
         </fieldset >
     );
 };

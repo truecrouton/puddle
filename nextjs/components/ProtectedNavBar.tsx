@@ -3,25 +3,19 @@
 import { SIGN_OUT } from "@/lib/queries";
 import { useMutation } from "@apollo/client/react";
 import { UserRound } from "lucide-react";
-import { redirect } from "next/navigation";
 import ErrorAlert from "./ErrorAlert";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function ProtectedNavBar() {
-    const [alertError, setAlertError] = useState('');
-    const [signOut, { loading: updatePending, error: updateError }] = useMutation(SIGN_OUT);
+    const [signOutDropped, setSignOutDropped] = useState(false);
+    const [signOut, { error: updateError }] = useMutation(SIGN_OUT);
+    const router = useRouter();
 
     const signOutClick = async () => {
-        setAlertError('');
-        try {
-            await signOut();
-        }
-        catch (error) {
-            console.error(error);
-            setAlertError((error as Error).message);
-        }
-
-        redirect('/');
+        setSignOutDropped(false);
+        await signOut();
+        router.push('/');
     };
 
     return (<>
@@ -44,7 +38,7 @@ export default function ProtectedNavBar() {
                         <li><a href="/schedule">Schedule</a></li>
                         <li><a href="/charts">Charts</a></li>
                         <li>
-                            <details>
+                            <details open={signOutDropped} onToggle={(e) => setSignOutDropped((e.currentTarget as HTMLDetailsElement).open)}>
                                 <summary><UserRound /></summary>
                                 <ul className="p-2 bg-base-100 w-40 z-1 right-0 left-auto">
                                     <li><button onClick={signOutClick}>Sign Out</button></li>
@@ -74,7 +68,7 @@ export default function ProtectedNavBar() {
                 </ul>
             </div>
         </div>
-        <ErrorAlert message={alertError} />
+        <ErrorAlert message={updateError?.message} />
     </>
     );
 }

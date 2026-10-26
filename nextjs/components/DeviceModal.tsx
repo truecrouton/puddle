@@ -1,10 +1,10 @@
-import { Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import BaseModal from './BaseModal';
 import { DELETE_DEVICE, GET_DEVICE, UPSERT_DEVICE } from '@/lib/queries';
 import { skipToken, useMutation, useQuery } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { InputFieldset } from './InputFieldset';
-import { EmptySelectFieldset, SelectFieldset } from './SelectFieldset';
+import { SelectFieldset } from './SelectFieldset';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -116,9 +116,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
             <form onSubmit={handleSubmit(onSubmit)} key={deviceId ?? 'new'}>
                 <fieldset disabled={loading} >
                     <input type="hidden" name="id" value={deviceId} />
-                    <Suspense fallback={<EmptySelectFieldset label="Topic" />}>
-                        <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
-                    </Suspense>
+                    <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <InputFieldset label='Name' error={errors.name} {...register("name")} />
                         <SelectFieldset label='Kind' error={errors.kind} {...register("kind")} >

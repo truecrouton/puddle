@@ -3,16 +3,18 @@ import { FieldError } from "react-hook-form";
 
 export interface InputFieldsetProps extends InputHTMLAttributes<HTMLInputElement> {
     label: string;
+    type?: string;
     error?: FieldError;
     hidden?: boolean;
+    className?: string;
 }
 
-export const InputFieldset = forwardRef<HTMLInputElement, InputFieldsetProps>(({ label, error, hidden = false, ...rest }, ref) => {
+export const InputFieldset = forwardRef<HTMLInputElement, InputFieldsetProps>(({ label, type = 'text', error, className = '', hidden = false, ...rest }, ref) => {
     return (
-        <fieldset className={`fieldset ${hidden ? 'hidden' : ''}`}>
+        <fieldset className={`fieldset ${className} ${hidden ? 'hidden' : ''}`}>
             <legend className="fieldset-legend">{label}</legend>
-            <input type="text" className="input w-full" ref={ref} {...rest} />
-            <p className="label text-error-content">{error?.message}</p>
+            <input type={type} className="input w-full" ref={ref} {...rest} />
+            <p className="label">{error?.message}</p>
         </fieldset>
     );
 });

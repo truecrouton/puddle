@@ -34,7 +34,7 @@ async function Home({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <main className="max-w-4xl mx-auto p-4">
+    <main className="max-w-5xl mx-auto p-4">
       <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
         <Link className="btn btn-primary btn-sm btn-circle mr-3" href='/automations'>
           <ArrowUp className='h-6 w-6' />

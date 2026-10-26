@@ -1,17 +1,17 @@
-import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput, zodUpsertExpressionSchema, UpsertExpressionInput, IdInput, zodUpsertAutomationSchema, UpsertAutomationInput, Status } from 'puddle-graphql';
+import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput, zodUpsertExpressionSchema, UpsertExpressionInput, IdInput, zodUpsertAutomationSchema, UpsertAutomationInput, Status, UpsertChartInput, zodUpsertChartInputSchema, zodEmptyInputSchema, zodIdInputSchema, zodSetDeviceInputSchema, zodSignInInputSchema, zodSignUpInputSchema, zodUpsertDeviceSchema, zodUpsertTopicInputSchema, zodPairsInput, Pair } from 'puddle-graphql';
 import { celsiusToFahrenheit, keysToCamelCase } from '../helper';
 import { encrypt } from './session';
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { ZodType } from 'zod';
 import { GraphQLError } from 'graphql';
-import { zodEmptyInputSchema, zodIdInputSchema, zodSetDeviceInputSchema, zodSignInInputSchema, zodSignUpInputSchema, zodUpsertDeviceSchema, zodUpsertTopicInputSchema } from './zod-schemas';
 import dotenv from 'dotenv';
 import path from 'path';
-import { cacheGet, cachePairsGet } from '../storage';
+import { cacheGet, cachePairsGet, sqliteDate } from '../storage';
 import { scheduledJobs } from 'node-schedule';
 import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from '../schedule';
 import { ApolloServerContext } from './context';
 import { getTopicIds } from '../expressions';
+import { parseISO } from 'date-fns';
 
 const validateInput = <TResult, TParent, TContext, TArgs>(
     schema: ZodType<any>,
@@ -122,7 +122,7 @@ export const resolvers: Resolvers = {
             return camelAutomations;
         }),
         charts: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
-            const stmt = context.db.prepare('SELECT id, name, topic_id, key FROM charts');
+            const stmt = context.db.prepare('SELECT id, name, topic_id, key, is_favorite FROM charts');
             const charts = stmt.all() as Record<string, any>[];
             const camelCharts = charts.map((c) => keysToCamelCase(c) as Chart);
             return camelCharts;
@@ -161,6 +161,18 @@ export const resolvers: Resolvers = {
             });
             return camelFavorites;
         }, { protected: false }),
+        pairs: validateInput(zodPairsInput, async (_parent, input, context: ApolloServerContext) => {
+            const utcStart = sqliteDate(false, parseISO(input.startDate));
+            const utcEnd = sqliteDate(false, parseISO(input.endDate));
+
+            const pairs = context.db.prepare('SELECT value, created_at FROM pairs where topic_id=? AND pair_id=0 AND is_object=0 AND name=? AND created_at>=? AND created_at<=?').all(input.topicId, input.name, utcStart, utcEnd) as {}[];
+            const camelPairs = pairs.map((p) => keysToCamelCase(p) as Pair);
+
+            const displayFarenheit = input.name === 'temperature' && process.env.TEMPERATURE_CONVERT_TO === 'F';
+            const convertedPairs = camelPairs.map((p) => displayFarenheit ? { ...p, value: celsiusToFahrenheit(p.value) } : p);
+
+            return convertedPairs;
+        }),
         schedule: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
             const stmt = context.db.prepare("SELECT id, name, trigger FROM automations WHERE trigger IN ('sun', 'time') AND (position=? OR trigger_at=?)");
 
@@ -194,6 +206,11 @@ export const resolvers: Resolvers = {
                 context.db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(input.id);
                 context.db.prepare('DELETE FROM automations WHERE id=?').run(input.id);
             })();
+
+            return true;
+        }),
+        deleteChart: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
+            context.db.prepare('DELETE FROM charts WHERE id=?').run(input.id);
 
             return true;
         }),
@@ -308,13 +325,13 @@ export const resolvers: Resolvers = {
                 { extensions: { code: 'BAD_USER_INPUT' } }
             );
 
-            context.db.prepare('INSERT INTO USERS (username, password, name, is_admin) VALUES(?, ?, ?, ?) RETURNING *').run(input.username, hashPassword(input.password), input.name, input.isAdmin ? 1 : 0);
+            context.db.prepare('INSERT INTO users (username, password, name, is_admin) VALUES(?, ?, ?, ?) RETURNING *').run(input.username, hashPassword(input.password), input.name, input.isAdmin ? 1 : 0);
             return true;
         }, { protected: false }),
         upsertAutomation: validateInput(zodUpsertAutomationSchema, async (_parent, { input }: { input: UpsertAutomationInput; }, context: ApolloServerContext) => {
             const automation = input.id > 0 ?
-                context.db.prepare('UPDATE automations SET name=?, trigger=?, trigger_at=?, position=?, topic_id=?, trigger_key=?, trigger_value=?, is_control_shown=? WHERE id=? RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0, input.id) as Automation :
-                context.db.prepare('INSERT INTO automations (name, trigger, trigger_at, position, topic_id, trigger_key, trigger_value, is_control_shown) VALUES(?, ?, ?, ?, ?, ?, ?, ?) RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0) as Automation;
+                context.db.prepare('UPDATE automations SET name=?, trigger=?, trigger_at=?, position=?, topic_id=?, trigger_key=?, trigger_value=?, is_control_shown=? WHERE id=? RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0, input.id) as {} :
+                context.db.prepare('INSERT INTO automations (name, trigger, trigger_at, position, topic_id, trigger_key, trigger_value, is_control_shown) VALUES(?, ?, ?, ?, ?, ?, ?, ?) RETURNING *').get(input.name, input.trigger, input.triggerAt, input.position, input.topicId, input.triggerKey, input.triggerValue, input.isControlShown ? 1 : 0) as {};
 
             if (input.trigger === "sun") {
                 scheduleSunAutomation(input.position!);
@@ -323,7 +340,14 @@ export const resolvers: Resolvers = {
                 scheduleTimeAutomation(input.triggerAt!);
             }
 
-            return keysToCamelCase(automation);
+            return keysToCamelCase(automation) as Automation;
+        }),
+        upsertChart: validateInput(zodUpsertChartInputSchema, async (_parent, { input }: { input: UpsertChartInput; }, context: ApolloServerContext) => {
+            const chart = input.id > 0 ?
+                context.db.prepare('UPDATE charts SET topic_id=?, name=?, key=?, is_favorite=? WHERE id=? RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0, input.id) as {} :
+                context.db.prepare('INSERT INTO charts (topic_id, name, key, is_favorite) VALUES(?, ?, ?, ?) RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0) as {};
+
+            return keysToCamelCase(chart);
         }),
         upsertDevice: validateInput(zodUpsertDeviceSchema, async (_parent, { input }: { input: UpsertDeviceInput; }, context: ApolloServerContext) => {
             const device = input.id > 0 ?

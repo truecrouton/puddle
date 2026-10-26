@@ -1,10 +1,10 @@
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import BaseModal from './BaseModal';
 import { DELETE_EXPRESSION, UPSERT_EXPRESSION } from '@/lib/queries';
 import { useMutation, } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { InputFieldset } from './InputFieldset';
-import { EmptySelectFieldset, SelectFieldset } from './SelectFieldset';
+import { SelectFieldset } from './SelectFieldset';
 import { z } from 'zod';
 import { FieldErrors, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -145,12 +145,8 @@ export default function ExpressionModal({ isOpen, onClose, onSuccess, expression
                             <option value={option.value} key={option.value}>{option.label}</option>
                         ))}
                     </SelectFieldset>
-                    {selectedKind == 'device' && <Suspense fallback={<EmptySelectFieldset label="Device" />}>
-                        <DeviceSelectFieldset label='Device' error={errors.deviceId?.message} control={control} name="deviceId" />
-                    </Suspense>}
-                    {selectedKind == 'publish' && <Suspense fallback={<EmptySelectFieldset label="Topic" />}>
-                        <TopicSelectFieldset label='Topic' error={errors.deviceId?.message} control={control} name="topicId" />
-                    </Suspense>}
+                    {selectedKind == 'device' && <DeviceSelectFieldset label='Device' error={errors.deviceId?.message} control={control} name="deviceId" />}
+                    {selectedKind == 'publish' && <TopicSelectFieldset label='Topic' error={errors.deviceId?.message} control={control} name="topicId" />}
                     {selectedKind == 'device' && <InputFieldset label='State' error={errors.state} {...register("state")} />}
                     {['notify', 'publish'].includes(selectedKind) && <InputFieldset label='Message' error={errors.message} {...register("message")} />}
                     {selectedKind == 'if' && <InputFieldset label='Expression' error={errors.expression} {...register("expression")} />}

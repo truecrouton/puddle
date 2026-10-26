@@ -32,6 +32,14 @@ input UpsertAutomationInput {
   isControlShown: Boolean
 }
 
+input UpsertChartInput {
+  id: Int!
+  name: String!
+  topicId: Int!
+  key: String!
+  isFavorite: Boolean!
+}
+
 input UpsertDeviceInput {
   id: Int!
   name: String!
@@ -80,6 +88,7 @@ type Chart {
   name: String!
   topicId: Int!
   key: String!
+  isFavorite: Boolean!
 }
 
 type Control {
@@ -130,6 +139,13 @@ type Favorite {
   state: String!
 }
 
+type Pair {
+  topicId: Int!
+  name: String!
+  value: String!
+  createdAt: String!
+}
+
 type Schedule {
   name: String!
   runsAt: String
@@ -167,6 +183,7 @@ type Query {
   device(id: Int!): Device
   devices: [Device!]!
   favorites: [Favorite!]!
+  pairs(topicId: Int!, name: String!, startDate: String!, endDate: String!): [Pair!]!
   schedule: [Schedule!]!
   topic(id: Int!): Topic
   topics: [Topic!]!
@@ -174,10 +191,12 @@ type Query {
 
 type Mutation {
   deleteAutomation(input: IdInput!): Boolean!
+  deleteChart(input: IdInput!): Boolean!
   deleteDevice(input: IdInput!): Boolean!
   deleteExpression(input: IdInput!): Boolean!
   deleteTopic(input: IdInput!): Boolean!
   upsertAutomation(input: UpsertAutomationInput!): Automation!
+  upsertChart(input: UpsertChartInput!): Chart!
   upsertExpression(input: UpsertExpressionInput!): Expression!
   upsertDevice(input: UpsertDeviceInput!): Device!
   upsertTopic(input: UpsertTopicInput!): Topic!

@@ -1,10 +1,10 @@
-import { Suspense, useState } from 'react';
+import { useState } from 'react';
 import BaseModal from './BaseModal';
 import { DELETE_AUTOMATION, UPSERT_AUTOMATION } from '@/lib/queries';
 import { useMutation, } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { InputFieldset } from './InputFieldset';
-import { EmptySelectFieldset, SelectFieldset } from './SelectFieldset';
+import { SelectFieldset } from './SelectFieldset';
 import { z } from 'zod';
 import { FieldErrors, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -139,9 +139,7 @@ export default function AutomationModal({ isOpen, onClose, onSuccess, automation
                         <option value="sunsetStart" key="sunsetStart">Sunset Start</option>
                     </SelectFieldset>}
                     {selectedTrigger == 'time' && <InputFieldset label='Trigger At' error={errors.triggerAt} {...register("triggerAt")} />}
-                    {selectedTrigger == 'topic' && <Suspense fallback={<EmptySelectFieldset label="Topic" />}>
-                        <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
-                    </Suspense>}
+                    {selectedTrigger == 'topic' && <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />}
                     {selectedTrigger == 'topic' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <InputFieldset label='Trigger Key' error={errors.triggerKey} {...register("triggerKey")} />
                         <InputFieldset label='Trigger Value' error={errors.triggerValue} {...register("triggerValue")} />

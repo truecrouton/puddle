@@ -6,6 +6,12 @@ export const DELETE_AUTOMATION = graphql(`
   }
 `);
 
+export const DELETE_CHART = graphql(`
+  mutation DeleteChart($input: IdInput!) {
+    deleteChart(input: $input)
+  }
+`);
+
 export const DELETE_DEVICE = graphql(`
   mutation DeleteDevice($input: IdInput!) {
     deleteDevice(input: $input)
@@ -71,6 +77,7 @@ export const GET_CHARTS = graphql(`
         name
         topicId
         key
+        isFavorite
       }
     }
   `);
@@ -125,6 +132,15 @@ export const GET_FAVORITES = graphql(`
         topicId
         stateKey
         state
+      }
+    }
+  `);
+
+export const GET_PAIRS = graphql(`
+    query GetPairs($topicId: Int!, $name: String!, $startDate: String!, $endDate: String!) {
+      pairs(topicId: $topicId, name: $name, startDate: $startDate, endDate: $endDate) {
+        value
+        createdAt
       }
     }
   `);
@@ -234,6 +250,18 @@ export const UPSERT_AUTOMATION = graphql(`
       triggerKey
       triggerValue
       isControlShown
+    }
+  }
+`);
+
+export const UPSERT_CHART = graphql(`
+  mutation UpsertChart($input: UpsertChartInput!) {
+    upsertChart(input: $input) {
+      id
+      name
+      topicId
+      key
+      isFavorite
     }
   }
 `);

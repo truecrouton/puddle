@@ -4,6 +4,17 @@ export const zodEmptyInputSchema = z.object({});
 
 export const zodIdInputSchema = z.object({ id: z.coerce.number().int().positive('The query was invalid.') });
 
+export const zodPairsInput = z.object({
+    topicId: z.coerce.number().int().positive("Please select a topic."),
+    name: z.string().min(1, 'Please provide a key.').max(30, 'Key must be less than 30 characters.'),
+    startDate: z.iso.datetime({ local: true }),
+    endDate: z.iso.datetime({ local: true })
+}).refine((data) => {
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+    return start < end;
+}, { error: 'Start date must be before end date.', path: ['endDate'] });
+
 export const zodSetDeviceInputSchema = z.object({
     deviceId: z.coerce.number().int().nonnegative(),
     state: z.string().min(1).max(30)
@@ -54,6 +65,14 @@ export const zodUpsertAutomationSchema = z.object({
     if (data.trigger == 'topic') return data.triggerValue?.length ?? 0 > 0;
     return true;
 }, { error: 'Please provide a trigger value.', path: ['triggerValue'] });
+
+export const zodUpsertChartInputSchema = z.object({
+    id: z.coerce.number().int().nonnegative(),
+    name: z.string().min(1, 'Please provide a name.').max(50, 'Name must be less than 50 characters.'),
+    topicId: z.coerce.number().int().positive('Please select a topic.'),
+    key: z.string().min(1, 'Please provide a key.').max(30, 'Key must be less than 30 characters.'),
+    isFavorite: z.boolean(),
+});
 
 export const zodUpsertTopicInputSchema = z.object({
     id: z.coerce.number().int().nonnegative(),

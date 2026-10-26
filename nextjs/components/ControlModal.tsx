@@ -53,7 +53,7 @@ export default function ControlModal({ isOpen, onClose, onSuccess, control }: Co
     const onSubmit = async (data: DeviceSetData) => {
         const payload: SetDeviceInput = {
             deviceId: data.deviceId,
-            state: (data.kind == 'toggleable' ? data.toggleableState : data.positionableState).toString()
+            state: data.kind == 'toggleable' ? (data.toggleableState ? 1 : 0) : data.positionableState
         };
 
         await setDevice({

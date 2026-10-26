@@ -28,6 +28,7 @@ export type Automation = {
 export type Chart = {
   __typename?: 'Chart';
   id: Scalars['Int']['output'];
+  isFavorite: Scalars['Boolean']['output'];
   key: Scalars['String']['output'];
   name: Scalars['String']['output'];
   topicId: Scalars['Int']['output'];
@@ -92,6 +93,7 @@ export type IdInput = {
 export type Mutation = {
   __typename?: 'Mutation';
   deleteAutomation: Scalars['Boolean']['output'];
+  deleteChart: Scalars['Boolean']['output'];
   deleteDevice: Scalars['Boolean']['output'];
   deleteExpression: Scalars['Boolean']['output'];
   deleteTopic: Scalars['Boolean']['output'];
@@ -100,6 +102,7 @@ export type Mutation = {
   signOut: Scalars['Boolean']['output'];
   signUp: Scalars['Boolean']['output'];
   upsertAutomation: Automation;
+  upsertChart: Chart;
   upsertDevice: Device;
   upsertExpression: Expression;
   upsertTopic: Topic;
@@ -107,6 +110,11 @@ export type Mutation = {
 
 
 export type MutationDeleteAutomationArgs = {
+  input: IdInput;
+};
+
+
+export type MutationDeleteChartArgs = {
   input: IdInput;
 };
 
@@ -146,6 +154,11 @@ export type MutationUpsertAutomationArgs = {
 };
 
 
+export type MutationUpsertChartArgs = {
+  input: UpsertChartInput;
+};
+
+
 export type MutationUpsertDeviceArgs = {
   input: UpsertDeviceInput;
 };
@@ -160,6 +173,14 @@ export type MutationUpsertTopicArgs = {
   input: UpsertTopicInput;
 };
 
+export type Pair = {
+  __typename?: 'Pair';
+  createdAt: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  topicId: Scalars['Int']['output'];
+  value: Scalars['String']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   automation?: Maybe<Automation>;
@@ -169,6 +190,7 @@ export type Query = {
   device?: Maybe<Device>;
   devices: Array<Device>;
   favorites: Array<Favorite>;
+  pairs: Array<Pair>;
   schedule: Array<Schedule>;
   topic?: Maybe<Topic>;
   topics: Array<Topic>;
@@ -182,6 +204,14 @@ export type QueryAutomationArgs = {
 
 export type QueryDeviceArgs = {
   id: Scalars['Int']['input'];
+};
+
+
+export type QueryPairsArgs = {
+  endDate: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  startDate: Scalars['String']['input'];
+  topicId: Scalars['Int']['input'];
 };
 
 
@@ -241,6 +271,14 @@ export type UpsertAutomationInput = {
   triggerAt?: InputMaybe<Scalars['String']['input']>;
   triggerKey?: InputMaybe<Scalars['String']['input']>;
   triggerValue?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpsertChartInput = {
+  id: Scalars['Int']['input'];
+  isFavorite: Scalars['Boolean']['input'];
+  key: Scalars['String']['input'];
+  name: Scalars['String']['input'];
+  topicId: Scalars['Int']['input'];
 };
 
 export type UpsertDeviceInput = {
@@ -365,6 +403,7 @@ export type ResolversTypes = {
   IdInput: IdInput;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
+  Pair: ResolverTypeWrapper<Pair>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Schedule: ResolverTypeWrapper<Schedule>;
   SetDeviceInput: SetDeviceInput;
@@ -374,6 +413,7 @@ export type ResolversTypes = {
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Topic: ResolverTypeWrapper<Topic>;
   UpsertAutomationInput: UpsertAutomationInput;
+  UpsertChartInput: UpsertChartInput;
   UpsertDeviceInput: UpsertDeviceInput;
   UpsertExpressionInput: UpsertExpressionInput;
   UpsertTopicInput: UpsertTopicInput;
@@ -392,6 +432,7 @@ export type ResolversParentTypes = {
   IdInput: IdInput;
   Int: Scalars['Int']['output'];
   Mutation: Record<PropertyKey, never>;
+  Pair: Pair;
   Query: Record<PropertyKey, never>;
   Schedule: Schedule;
   SetDeviceInput: SetDeviceInput;
@@ -401,6 +442,7 @@ export type ResolversParentTypes = {
   String: Scalars['String']['output'];
   Topic: Topic;
   UpsertAutomationInput: UpsertAutomationInput;
+  UpsertChartInput: UpsertChartInput;
   UpsertDeviceInput: UpsertDeviceInput;
   UpsertExpressionInput: UpsertExpressionInput;
   UpsertTopicInput: UpsertTopicInput;
@@ -422,6 +464,7 @@ export type AutomationResolvers<ContextType = any, ParentType extends ResolversP
 
 export type ChartResolvers<ContextType = any, ParentType extends ResolversParentTypes['Chart'] = ResolversParentTypes['Chart']> = {
   id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  isFavorite?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
@@ -477,6 +520,7 @@ export type FavoriteResolvers<ContextType = any, ParentType extends ResolversPar
 
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   deleteAutomation?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteAutomationArgs, 'input'>>;
+  deleteChart?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteChartArgs, 'input'>>;
   deleteDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteDeviceArgs, 'input'>>;
   deleteExpression?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteExpressionArgs, 'input'>>;
   deleteTopic?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTopicArgs, 'input'>>;
@@ -485,9 +529,17 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   signUp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;
   upsertAutomation?: Resolver<ResolversTypes['Automation'], ParentType, ContextType, RequireFields<MutationUpsertAutomationArgs, 'input'>>;
+  upsertChart?: Resolver<ResolversTypes['Chart'], ParentType, ContextType, RequireFields<MutationUpsertChartArgs, 'input'>>;
   upsertDevice?: Resolver<ResolversTypes['Device'], ParentType, ContextType, RequireFields<MutationUpsertDeviceArgs, 'input'>>;
   upsertExpression?: Resolver<ResolversTypes['Expression'], ParentType, ContextType, RequireFields<MutationUpsertExpressionArgs, 'input'>>;
   upsertTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationUpsertTopicArgs, 'input'>>;
+};
+
+export type PairResolvers<ContextType = any, ParentType extends ResolversParentTypes['Pair'] = ResolversParentTypes['Pair']> = {
+  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  topicId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
@@ -498,6 +550,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   device?: Resolver<Maybe<ResolversTypes['Device']>, ParentType, ContextType, RequireFields<QueryDeviceArgs, 'id'>>;
   devices?: Resolver<Array<ResolversTypes['Device']>, ParentType, ContextType>;
   favorites?: Resolver<Array<ResolversTypes['Favorite']>, ParentType, ContextType>;
+  pairs?: Resolver<Array<ResolversTypes['Pair']>, ParentType, ContextType, RequireFields<QueryPairsArgs, 'endDate' | 'name' | 'startDate' | 'topicId'>>;
   schedule?: Resolver<Array<ResolversTypes['Schedule']>, ParentType, ContextType>;
   topic?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType, RequireFields<QueryTopicArgs, 'id'>>;
   topics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType>;
@@ -540,6 +593,7 @@ export type Resolvers<ContextType = any> = {
   Expression?: ExpressionResolvers<ContextType>;
   Favorite?: FavoriteResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  Pair?: PairResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Schedule?: ScheduleResolvers<ContextType>;
   Status?: StatusResolvers<ContextType>;
