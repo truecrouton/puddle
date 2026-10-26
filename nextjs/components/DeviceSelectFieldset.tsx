@@ -2,6 +2,8 @@ import { useController } from "react-hook-form";
 import { GET_DEVICE_STUBS } from "@/lib/queries";
 import { useQuery, } from "@apollo/client/react";
 import { Device } from "puddle-graphql";
+import { useMemo } from "react";
+import { sortArray } from "@/lib/utilities";
 
 export interface DeviceSelectFieldsetProps {
     label: string;
@@ -17,6 +19,10 @@ export const DeviceSelectFieldset = ({ label, error, control, name }: DeviceSele
         field: { value, onChange, onBlur, ref },
     } = useController({ name, control, });
 
+    const sortedDevices = useMemo(() => {
+        return sortArray(data?.devices, 'name');
+    }, [data]);
+
     return (
         <fieldset className="fieldset">
             <legend className="fieldset-legend">{label}</legend>
@@ -24,7 +30,7 @@ export const DeviceSelectFieldset = ({ label, error, control, name }: DeviceSele
                 <option value="0">
                     {loading ? "Loading devices..." : "Select a Device"}
                 </option>
-                {data?.devices?.map((device) => (
+                {sortedDevices?.map((device) => (
                     <option key={device.id} value={device.id}>
                         {device.name}
                     </option>

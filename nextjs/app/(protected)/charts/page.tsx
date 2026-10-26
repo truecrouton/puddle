@@ -29,7 +29,6 @@ async function Home() {
         </Link>
         Review mqtt topic states
       </h1>
-      <h3 className="text-2xl font-normal mb-6">Select a topic and a key to chart.</h3>
       <PreloadedCharts />
     </main>
   );

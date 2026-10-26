@@ -22,7 +22,7 @@ export default function DateRangePicker({ className = '', error }: DateRangePick
 
     function formatDate(date: Date) {
         if (!date) return '';
-        return format(date, 'yyyy-MM-dd hh:mma');
+        return format(date, 'MM/dd/yyyy hh:mma');
     }
 
     function setStartDate(selectedDate: Date) {

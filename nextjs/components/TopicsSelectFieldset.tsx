@@ -1,6 +1,8 @@
 import { useController } from "react-hook-form";
 import { GET_TOPICS } from "@/lib/queries";
 import { useQuery } from "@apollo/client/react";
+import { useMemo } from "react";
+import { sortArray } from "@/lib/utilities";
 
 export interface TopicSelectFieldsetProps {
     label: string;
@@ -16,6 +18,10 @@ export const TopicSelectFieldset = ({ label, error, control, name }: TopicSelect
         field: { value, onChange, onBlur, ref },
     } = useController({ name, control });
 
+    const sortedTopics = useMemo(() => {
+        return sortArray(data?.topics, 'topic');
+    }, [data]);
+
     return (
         <fieldset className="fieldset">
             <legend className="fieldset-legend">{label}</legend>
@@ -23,7 +29,7 @@ export const TopicSelectFieldset = ({ label, error, control, name }: TopicSelect
                 <option value="0">
                     {loading ? "Loading topics..." : "Select a Topic"}
                 </option>
-                {data?.topics?.map((topic) => (
+                {sortedTopics?.map((topic) => (
                     <option key={topic.id} value={topic.id}>
                         {topic.topic}
                     </option>

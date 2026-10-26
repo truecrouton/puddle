@@ -14,13 +14,13 @@ interface ChartModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    chart: Chart;
+    chart: Chart | null;
 }
 
 export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartModalProps) {
     const [deleteChart, { loading: deletePending, error: deleteError, reset: resetDeleteMutation }] = useMutation(DELETE_CHART, {
         update(cache, { data }) {
-            if (!data?.deleteChart.valueOf) return;
+            if (!chart || !data?.deleteChart.valueOf) return;
 
             cache.modify({
                 fields: {
@@ -36,7 +36,7 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
     });
     const [upsertChart, { loading: updatePending, error: updateError, reset: resetUpsertMutation }] = useMutation(UPSERT_CHART, {
         update(cache, { data }) {
-            if (chart.id || !data?.upsertChart) return;
+            if (chart?.id || !data?.upsertChart) return;
 
             cache.modify({
                 fields: {
@@ -99,7 +99,7 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
     };
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} title={`${chart.id ? 'Edit' : 'Add'} Chart`} alertErrors={[deleteError?.message, updateError?.message]}>
+        <BaseModal isOpen={isOpen} onClose={onClose} title={`${chart?.id ? 'Edit' : 'Add'} Chart`} alertErrors={[deleteError?.message, updateError?.message]}>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <fieldset>
                     <input type="hidden" {...register('id')} />
@@ -114,7 +114,7 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
                             <input type='checkbox' className="toggle toggle-lg" {...register("isFavorite")} />
                             <p className="label text-error-content">{errors.isFavorite?.message}</p>
                         </fieldset>                    </div>
-                    <ModalActions isPending={updatePending || deletePending} onClose={onClose} onDelete={chart.id ? () => onDelete(chart.id) : undefined} />
+                    <ModalActions isPending={updatePending || deletePending} onClose={onClose} onDelete={chart?.id ? () => onDelete(chart.id) : undefined} />
                 </fieldset>
             </form>
         </BaseModal>

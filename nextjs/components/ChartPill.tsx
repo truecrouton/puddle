@@ -19,7 +19,7 @@ interface ChartPillProps {
 
 export default function ChartPill({ chart, onClick }: ChartPillProps) {
     return (
-        <button className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" onClick={onClick}>
+        <button className="inline-flex items-center rounded-full w-fit bg-base-300 text-base-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" onClick={onClick}>
             {iconMap[chart.key]}
             <div className="text-left">
                 <h3 className="font-bold">{chart.name}</h3>

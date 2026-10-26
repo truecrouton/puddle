@@ -7,7 +7,7 @@ const iconMap: Record<string, LucideIcon> = {
     battery: BatteryCharging,
 };
 
-const stateMap: Record<string, string> = {
+export const stateMap: Record<string, string> = {
     battery: '%',
     humidity: '%',
     illuminance: '',
