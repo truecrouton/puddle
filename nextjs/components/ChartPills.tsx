@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import ChartPill from './ChartPill';
-import { QueryRef, useReadQuery } from '@apollo/client/react';
+import { QueryRef, useFragment, useReadQuery } from '@apollo/client/react';
 import { sortArray } from '@/lib/utilities';
 import { Chart, zodPairsInput } from 'puddle-graphql';
 import ChartModal from './ChartModal';
@@ -10,6 +10,7 @@ import ChartGenerator from './ChartGenerator';
 import { Plus, Settings } from 'lucide-react';
 import IconPill from './IconPill';
 import z from 'zod';
+import { gql } from '@apollo/client';
 
 type zodChartInputSchema = z.infer<typeof zodPairsInput>;
 
@@ -18,7 +19,7 @@ interface ChartPillsProps {
 }
 
 export default function ChartPills({ queryRef }: ChartPillsProps) {
-    const [selectedChart, setSelectedChart] = useState<Chart | null>(null);
+    const [selectedChartId, setSelectedChartId] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [chartRequest, setChartRequest] = useState<zodChartInputSchema>({
         name: '',
@@ -30,10 +31,9 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
     const { data } = useReadQuery(queryRef);
     const charts = data.charts as Chart[];
 
-    const handleLoadClick = (chart: Chart) => {
-        setSelectedChart(chart);
-        setChartRequest({ ...chartRequest, name: chart.key, topicId: chart.topicId });
-
+    const handleLoadClick = (id: number, name: string, topicId: number) => {
+        setSelectedChartId(id);
+        setChartRequest({ ...chartRequest, name, topicId });
     };
 
     const handleSettingsClick = () => {
@@ -41,18 +41,49 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
     };
 
     function handleAddClick() {
-        setSelectedChart(null);
+        setSelectedChartId(0);
         setIsModalOpen(true);
     }
 
-    function handleModalSuccess() {
-        setSelectedChart(null);
+    function handleDeleted() {
+        setSelectedChartId(0);
+        setIsModalOpen(false);
+    }
+
+    function handleUpserted(updatedChart: Chart) {
         setIsModalOpen(false);
     }
 
     function handleChartChange(name: string, topicId: number) {
-        setSelectedChart(null);
+        setSelectedChartId(0);
         setChartRequest({ ...chartRequest, name, topicId });
+    }
+
+    function ChartHeading() {
+        const { data: selectedChart } = useFragment<Chart>({
+            fragment: gql`
+          fragment CurrentChart on Chart {
+            id
+            name
+            topicId
+            key
+            isFavorite
+          }
+        `,
+            from: selectedChartId ? { __typename: "Chart", id: selectedChartId } : null,
+        });
+
+        return (
+            selectedChartId ?
+                <h3 className="text-2xl font-normal mb-6">
+                    Select a date range for the <strong className='font-semibold'>{selectedChart.name}</strong> chart.
+                    <button className="btn btn-primary btn-sm btn-circle ml-3" onClick={() => handleSettingsClick()}>
+                        <Settings />
+                    </button>
+                </h3>
+                :
+                <h3 className="text-2xl font-normal mb-6">Select a topic and a key to chart.</h3>
+        );
     }
 
     const sortedCharts = useMemo(() => {
@@ -61,16 +92,7 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
 
     return (
         <>
-            {selectedChart ? <>
-                <h3 className="text-2xl font-normal mb-6">
-                    Select a date range for the <strong className='font-semibold'>{selectedChart.name}</strong> chart.
-                    <button className="btn btn-primary btn-sm btn-circle ml-3" onClick={() => handleSettingsClick()}>
-                        <Settings />
-                    </button>
-                </h3>
-            </> :
-                <h3 className="text-2xl font-normal mb-6">Select a topic and a key to chart.</h3>
-            }
+            <ChartHeading />
             <ChartGenerator chartRequest={chartRequest} onChange={handleChartChange} />
 
             <div className="bg-base-100 pb-8">
@@ -78,12 +100,13 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
                     <IconPill icon={Plus} onClick={() => handleAddClick()} />
 
                     {sortedCharts.map((chart) => (
-                        <ChartPill chart={chart} onClick={() => handleLoadClick(chart)} key={chart.id} />
+                        <ChartPill chart={chart} onClick={() => handleLoadClick(chart.id, chart.key, chart.topicId)} key={chart.id} />
                     ))}
                 </div>
             </div>
 
-            <ChartModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={handleModalSuccess} chart={selectedChart} />
+            <ChartModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUpserted={handleUpserted} onDeleted={handleDeleted} chartId={selectedChartId} />
         </>
     );
 }
+

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { zodPairsInput } from 'puddle-graphql';
-import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { CartesianGrid, Line, LineChart, Tooltip, TooltipContentProps, XAxis, YAxis } from 'recharts';
 import { TopicSelectFieldset } from './TopicsSelectFieldset';
 import DateRangePicker from './DateRangePicker';

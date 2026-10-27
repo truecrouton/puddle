@@ -1,6 +1,6 @@
 import BaseModal from './BaseModal';
-import { DELETE_CHART, UPSERT_CHART } from '@/lib/queries';
-import { useMutation } from '@apollo/client/react';
+import { DELETE_CHART, GET_CHARTS, GET_TOPIC_DETAILS, UPSERT_CHART } from '@/lib/queries';
+import { useFragment, useMutation } from '@apollo/client/react';
 import ModalActions from './ModalActions';
 import { InputFieldset } from './InputFieldset';
 import { z } from 'zod';
@@ -9,25 +9,40 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Chart, zodUpsertChartInputSchema } from 'puddle-graphql';
 import { useEffect } from 'react';
 import { TopicSelectFieldset } from './TopicsSelectFieldset';
+import { gql } from '@apollo/client';
 
 interface ChartModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: () => void;
-    chart: Chart | null;
+    onUpserted: (updatedChart: Chart) => void;
+    onDeleted: () => void;
+    chartId: number;
 }
 
-export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartModalProps) {
+export default function ChartModal({ isOpen, onClose, onUpserted, onDeleted, chartId }: ChartModalProps) {
+    const { data: selectedChart } = useFragment<Chart>({
+        fragment: gql`
+      fragment CurrentChart on Chart {
+        id
+        name
+        topicId
+        key
+        isFavorite
+      }
+    `,
+        from: chartId ? { __typename: "Chart", id: chartId } : null,
+    });
+
     const [deleteChart, { loading: deletePending, error: deleteError, reset: resetDeleteMutation }] = useMutation(DELETE_CHART, {
         update(cache, { data }) {
-            if (!chart || !data?.deleteChart.valueOf) return;
+            if (!selectedChart || !data?.deleteChart.valueOf) return;
 
             cache.modify({
                 fields: {
                     charts(existingCharts = [], { readField }) {
                         return existingCharts.filter((c: Chart) => {
                             const chartId = readField('id', c);
-                            return chartId != chart.id;
+                            return chartId != selectedChart.id;
                         });
                     },
                 },
@@ -36,15 +51,23 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
     });
     const [upsertChart, { loading: updatePending, error: updateError, reset: resetUpsertMutation }] = useMutation(UPSERT_CHART, {
         update(cache, { data }) {
-            if (chart?.id || !data?.upsertChart) return;
+            if (chartId || !data?.upsertChart) return;
+            cache.updateQuery({
+                query: GET_CHARTS,
+            }, (existingCharts) => {
+                if (!existingCharts) return existingCharts;
 
-            cache.modify({
-                fields: {
-                    topics(existingCharts = [], { toReference }) {
-                        return [...existingCharts, toReference(data.upsertChart)];
-                    },
-                },
+                const exists = existingCharts.charts.some(b => b.id === data.upsertChart.id);
+                if (exists) return existingCharts;
+
+                return {
+                    ...existingCharts,
+                    charts: [...existingCharts.charts, data.upsertChart],
+                };
             });
+        },
+        onCompleted(data) {
+            onUpserted(data.upsertChart);
         }
     });
 
@@ -57,12 +80,12 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
         formState: { errors },
     } = useForm({
         resolver: zodResolver(zodUpsertChartInputSchema),
-        values: chart ? {
-            id: chart.id,
-            name: chart.name || '',
-            topicId: chart.topicId || 0,
-            key: chart.key || '',
-            isFavorite: chart.isFavorite || false
+        values: selectedChart ? {
+            id: selectedChart.id,
+            name: selectedChart.name || '',
+            topicId: selectedChart.topicId || 0,
+            key: selectedChart.key || '',
+            isFavorite: selectedChart.isFavorite || false
         } : {
             id: 0,
             name: '',
@@ -79,12 +102,11 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
     }, [isOpen]);
 
     const onSubmit = async (data: ChartData) => {
-        await upsertChart({
+        const r = await upsertChart({
             variables: {
                 input: data
             }
         });
-        onSuccess();
     };
 
     const onDelete = async (chartId: number) => {
@@ -95,11 +117,11 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
                 }
             }
         });
-        onSuccess();
+        onDeleted();
     };
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} title={`${chart?.id ? 'Edit' : 'Add'} Chart`} alertErrors={[deleteError?.message, updateError?.message]}>
+        <BaseModal isOpen={isOpen} onClose={onClose} title={`${selectedChart?.id ? 'Edit' : 'Add'} Chart`} alertErrors={[deleteError?.message, updateError?.message]}>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <fieldset>
                     <input type="hidden" {...register('id')} />
@@ -114,7 +136,7 @@ export default function ChartModal({ isOpen, onClose, onSuccess, chart }: ChartM
                             <input type='checkbox' className="toggle toggle-lg" {...register("isFavorite")} />
                             <p className="label text-error-content">{errors.isFavorite?.message}</p>
                         </fieldset>                    </div>
-                    <ModalActions isPending={updatePending || deletePending} onClose={onClose} onDelete={chart?.id ? () => onDelete(chart.id) : undefined} />
+                    <ModalActions isPending={updatePending || deletePending} onClose={onClose} onDelete={selectedChart?.id ? () => onDelete(selectedChart?.id || 0) : undefined} />
                 </fieldset>
             </form>
         </BaseModal>

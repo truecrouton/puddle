@@ -4,6 +4,7 @@ import { GET_FAVORITES } from "@/lib/queries";
 import { connection } from 'next/server';
 import { ProtectedPage } from '@/components/ProtectedPage';
 import { MousePointer2 } from 'lucide-react';
+import Link from 'next/link';
 
 async function PreloadedFavorites() {
   // Tells Next.js this segment runs at request-time (compatible with cacheComponents)
@@ -29,36 +30,36 @@ async function Home() {
       <PreloadedFavorites />
       <div className="flex flex-wrap gap-3">
         <MousePointer2 className="w-12 h-12" />
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/control'>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/control'>
           <div className="text-left">
             <h3 className="font-bold">Control</h3>
           </div>
-        </a>
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/devices'>
+        </Link>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/devices'>
           <div className="text-left">
             <h3 className="font-bold">Devices</h3>
           </div>
-        </a>
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/automations'>
+        </Link>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/automations'>
           <div className="text-left">
             <h3 className="font-bold">Automations</h3>
           </div>
-        </a>
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/topics'>
+        </Link>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/topics'>
           <div className="text-left">
             <h3 className="font-bold">Topics</h3>
           </div>
-        </a>
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/schedule'>
+        </Link>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/schedule'>
           <div className="text-left">
             <h3 className="font-bold">Schedule</h3>
           </div>
-        </a>
-        <a className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/charts'>
+        </Link>
+        <Link className="inline-flex items-center rounded-full w-fit bg-warning text-warning-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" href='/charts'>
           <div className="text-left">
             <h3 className="font-bold">Charts</h3>
           </div>
-        </a>
+        </Link>
       </div>
     </main>
   );

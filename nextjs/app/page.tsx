@@ -5,6 +5,7 @@ import { PreloadQuery } from '@/lib/apollo-server';
 import { connection } from 'next/server';
 import { GET_FAVORITES } from "@/lib/queries";
 import FavoritePills from "@/components/FavoritePills";
+import Link from "next/link";
 
 async function PreloadedFavorites() {
   // Tells Next.js this segment runs at request-time (compatible with cacheComponents)
@@ -31,7 +32,7 @@ export default async function Home() {
             <label htmlFor="navbar-1-toggle" className="btn btn-ghost lg:hidden">
               <svg aria-label="Menu" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
             </label>
-            <a className="btn btn-ghost text-xl" href="/">Puddle</a>
+            <Link className="btn btn-ghost text-xl" href="/">Puddle</Link>
           </div>
           <div className="navbar-end hidden lg:flex">
             <ul className="menu menu-horizontal px-1">

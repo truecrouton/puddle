@@ -344,10 +344,10 @@ export const resolvers: Resolvers = {
         }),
         upsertChart: validateInput(zodUpsertChartInputSchema, async (_parent, { input }: { input: UpsertChartInput; }, context: ApolloServerContext) => {
             const chart = input.id > 0 ?
-                context.db.prepare('UPDATE charts SET topic_id=?, name=?, key=?, is_favorite=? WHERE id=? RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0, input.id) as {} :
-                context.db.prepare('INSERT INTO charts (topic_id, name, key, is_favorite) VALUES(?, ?, ?, ?) RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0) as {};
+                context.db.prepare('UPDATE charts SET topic_id=?, name=?, key=?, is_favorite=? WHERE id=? RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0, input.id) as Record<string, any> :
+                context.db.prepare('INSERT INTO charts (topic_id, name, key, is_favorite) VALUES(?, ?, ?, ?) RETURNING *').get(input.topicId, input.name, input.key, input.isFavorite ? 1 : 0) as Record<string, any>;
 
-            return keysToCamelCase(chart);
+            return keysToCamelCase({ ...chart, isFavorite: chart.is_favorite ? true : false });
         }),
         upsertDevice: validateInput(zodUpsertDeviceSchema, async (_parent, { input }: { input: UpsertDeviceInput; }, context: ApolloServerContext) => {
             const device = input.id > 0 ?

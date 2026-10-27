@@ -6,6 +6,7 @@ import { UserRound } from "lucide-react";
 import ErrorAlert from "./ErrorAlert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function ProtectedNavBar() {
     const [signOutDropped, setSignOutDropped] = useState(false);
@@ -27,16 +28,16 @@ export default function ProtectedNavBar() {
                     <label htmlFor="navbar-1-toggle" className="btn btn-ghost lg:hidden">
                         <svg aria-label="Menu" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
                     </label>
-                    <a className="btn btn-ghost text-xl" href="/dashboard">Puddle</a>
+                    <Link className="btn btn-ghost text-xl" href="/dashboard">Puddle</Link>
                 </div>
                 <div className="navbar-end hidden lg:flex">
                     <ul className="menu menu-horizontal px-1">
-                        <li><a href="/control">Control</a></li>
-                        <li><a href="/devices">Devices</a></li>
-                        <li><a href="/automations">Automations</a></li>
-                        <li><a href="/topics">Topics</a></li>
-                        <li><a href="/schedule">Schedule</a></li>
-                        <li><a href="/charts">Charts</a></li>
+                        <li><Link href="/control">Control</Link> </li>
+                        <li><Link href="/devices">Devices</Link> </li>
+                        <li><Link href="/automations">Automations</Link> </li>
+                        <li><Link href="/topics">Topics</Link> </li>
+                        <li><Link href="/schedule">Schedule</Link> </li>
+                        <li><Link href="/charts">Charts</Link> </li>
                         <li>
                             <details open={signOutDropped} onToggle={(e) => setSignOutDropped((e.currentTarget as HTMLDetailsElement).open)}>
                                 <summary><UserRound /></summary>
@@ -51,12 +52,12 @@ export default function ProtectedNavBar() {
 
             <div className="collapse-content lg:hidden z-1">
                 <ul className="menu">
-                    <li><a href="/control">Control</a></li>
-                    <li><a href="/devices">Devices</a></li>
-                    <li><a href="/automations">Automations</a></li>
-                    <li><a href="/topics">Topics</a></li>
-                    <li><a href="/schedule">Schedule</a></li>
-                    <li><a href="/charts">Charts</a></li>
+                    <li><Link href="/control">Control</Link> </li>
+                    <li><Link href="/devices">Devices</Link> </li>
+                    <li><Link href="/automations">Automations</Link> </li>
+                    <li><Link href="/topics">Topics</Link> </li>
+                    <li><Link href="/schedule">Schedule</Link> </li>
+                    <li><Link href="/charts">Charts</Link> </li>
                     <li>
                         <details>
                             <summary><UserRound /></summary>
