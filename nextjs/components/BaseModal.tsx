@@ -11,7 +11,6 @@ interface BaseModalProps {
 }
 
 export default function BaseModal({ isOpen, onClose, title, alertErrors, children }: BaseModalProps) {
-    console.log("Rendering BaseModal", isOpen);
     return (
         <dialog id="device_modal" onClose={onClose} className="modal modal-bottom sm:modal-middle" open={isOpen}>
             <div className="modal-box w-11/12 max-w-4xl">

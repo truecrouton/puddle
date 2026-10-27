@@ -1,22 +1,17 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import ChartPill from './ChartPill';
 import { QueryRef, useReadQuery } from '@apollo/client/react';
 import { sortArray } from '@/lib/utilities';
-import { Chart } from 'puddle-graphql';
+import { Chart, zodPairsInput } from 'puddle-graphql';
 import ChartModal from './ChartModal';
-import DeviceChart from './ChartGenerator';
+import ChartGenerator from './ChartGenerator';
 import { Plus, Settings } from 'lucide-react';
 import IconPill from './IconPill';
+import z from 'zod';
 
-function ChartSkeleton() {
-    return (
-        <div className="w-full bg-white flex items-center justify-center" style={{ aspectRatio: '1.618' }} >
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-        </div>
-    );
-}
+type zodChartInputSchema = z.infer<typeof zodPairsInput>;
 
 interface ChartPillsProps {
     queryRef: QueryRef<any>;
@@ -25,12 +20,20 @@ interface ChartPillsProps {
 export default function ChartPills({ queryRef }: ChartPillsProps) {
     const [selectedChart, setSelectedChart] = useState<Chart | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [chartRequest, setChartRequest] = useState<zodChartInputSchema>({
+        name: '',
+        topicId: 0,
+        startDate: '',
+        endDate: ''
+    });
 
     const { data } = useReadQuery(queryRef);
     const charts = data.charts as Chart[];
 
     const handleLoadClick = (chart: Chart) => {
         setSelectedChart(chart);
+        setChartRequest({ ...chartRequest, name: chart.key, topicId: chart.topicId });
+
     };
 
     const handleSettingsClick = () => {
@@ -45,6 +48,11 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
     function handleModalSuccess() {
         setSelectedChart(null);
         setIsModalOpen(false);
+    }
+
+    function handleChartChange(name: string, topicId: number) {
+        setSelectedChart(null);
+        setChartRequest({ ...chartRequest, name, topicId });
     }
 
     const sortedCharts = useMemo(() => {
@@ -63,7 +71,7 @@ export default function ChartPills({ queryRef }: ChartPillsProps) {
             </> :
                 <h3 className="text-2xl font-normal mb-6">Select a topic and a key to chart.</h3>
             }
-            <Suspense fallback={<ChartSkeleton />}><DeviceChart selectedChart={selectedChart} /></Suspense>
+            <ChartGenerator chartRequest={chartRequest} onChange={handleChartChange} />
 
             <div className="bg-base-100 pb-8">
                 <div className="flex flex-wrap gap-3">

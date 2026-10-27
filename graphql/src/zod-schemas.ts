@@ -7,8 +7,8 @@ export const zodIdInputSchema = z.object({ id: z.coerce.number().int().positive(
 export const zodPairsInput = z.object({
     topicId: z.coerce.number().int().positive("Please select a topic."),
     name: z.string().min(1, 'Please provide a key.').max(30, 'Key must be less than 30 characters.'),
-    startDate: z.iso.datetime({ local: true }),
-    endDate: z.iso.datetime({ local: true })
+    startDate: z.iso.datetime(),
+    endDate: z.iso.datetime({ error: 'Please provide a valid date range.' })
 }).refine((data) => {
     const start = new Date(data.startDate);
     const end = new Date(data.endDate);

@@ -1,101 +1,108 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Chart, zodPairsInput } from 'puddle-graphql';
-import { FormProvider, useForm } from 'react-hook-form';
+import { zodPairsInput } from 'puddle-graphql';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { CartesianGrid, Line, LineChart, Tooltip, TooltipContentProps, XAxis, YAxis } from 'recharts';
 import { TopicSelectFieldset } from './TopicsSelectFieldset';
-import { InputFieldset } from './InputFieldset';
 import DateRangePicker from './DateRangePicker';
 import z from 'zod';
 import { GET_PAIRS } from '@/lib/queries';
 import { useSuspenseQuery } from '@apollo/client/react';
-import { useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { LTTB } from 'downsample';
-import { differenceInDays, differenceInHours, format } from 'date-fns';
-import { Play } from 'lucide-react';
+import { differenceInHours, format } from 'date-fns';
 import { capitalize, celsiusToFahrenheit } from '@/lib/utilities';
 import { stateMap } from './FavoritePill';
+import { ChartKeySelectFieldset } from './ChartKeySelectFieldset';
 
-interface DeviceChartProps {
-    selectedChart: Chart | null;
+type zodChartInputSchema = z.infer<typeof zodPairsInput>;
+
+function ChartSkeleton() {
+    return (
+        <div className="w-full flex items-center justify-center" style={{ aspectRatio: '1.618' }} >
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
+    );
 }
 
-export default function ChartGenerator({ selectedChart }: DeviceChartProps) {
-    const [isChartOpen, setIsChartOpen] = useState({ open: false, startDate: '', endDate: '' });
+interface ChartGeneratorProps {
+    onChange: (name: string, topicId: number) => void;
+    chartRequest: zodChartInputSchema;
+}
 
-    type ChartData = z.infer<typeof zodPairsInput>;
+export default function ChartGenerator({ onChange, chartRequest }: ChartGeneratorProps) {
+    const [topicId, setTopicId] = useState(0);
+    const chartInput = useRef({
+        startDate: '',
+        endDate: ''
+    });
+
     const formMethods = useForm({
         resolver: zodResolver(zodPairsInput),
-        values: selectedChart ? {
-            name: selectedChart.key || '',
-            topicId: selectedChart.topicId || 0,
-            startDate: isChartOpen.startDate,
-            endDate: isChartOpen.endDate
-        } : {
-            name: '',
-            topicId: 0,
-            startDate: isChartOpen.startDate,
-            endDate: isChartOpen.endDate
+        values: {
+            name: chartRequest.name,
+            topicId: chartRequest.topicId,
+            startDate: chartInput.current.startDate,
+            endDate: chartInput.current.endDate
         }
     });
 
     const {
-        register,
-        handleSubmit,
+        getValues,
         control,
-        reset,
-        setValue,
         formState: { errors },
     } = formMethods;
 
-    const onSubmit = async (data: ChartData) => {
-        setIsChartOpen({ open: true, startDate: data.startDate, endDate: data.endDate });
-    };
+    useEffect(() => {
+        setTopicId(chartRequest?.topicId || 0);
+    }, [chartRequest?.topicId]);
+
+    function handleDateChange(startDate: string, endDate: string) {
+        chartInput.current.startDate = startDate;
+        chartInput.current.endDate = endDate;
+    }
+
+    const validationResult = zodPairsInput.safeParse({ ...getValues(), topicId: Number(getValues('topicId')) });
 
     return (
         <>
-            <form className='mb-6' onSubmit={handleSubmit(onSubmit)}>
+            <form className='mb-6' onChange={() => onChange(getValues('name'), Number(getValues('topicId')))}>
                 <fieldset>
                     <div className="grid grid-cols-1 md:grid-cols-16 gap-2">
                         <div className='md:col-span-6'>
                             <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
                         </div>
-                        <InputFieldset className='md:col-span-3' label='Key' error={errors.name} {...register("name")} />
+                        <ChartKeySelectFieldset className='md:col-span-4' label='Key' error={errors.name?.message} control={control} name="name" topicId={topicId} />
                         <FormProvider {...formMethods}>
-                            <DateRangePicker className='md:col-span-6' error={errors.endDate} />
+                            <DateRangePicker className='md:col-span-6' error={errors.endDate} onDateChange={handleDateChange} />
                         </FormProvider>
-                        <fieldset className="fieldset">
-                            <legend className="fieldset-legend">Run</legend>
-                            <button type="submit" className="btn btn-primary"><Play /></button>
-                            <p className="label"></p>
-                        </fieldset>
                     </div>
                 </fieldset>
             </form>
 
-            {isChartOpen.open && selectedChart && <PairChart selectedChart={selectedChart} startDate={isChartOpen.startDate} endDate={isChartOpen.endDate} />}
+            {validationResult.success && <Suspense fallback={<ChartSkeleton />}>
+                <PairChart chart={{ ...getValues(), topicId: Number(getValues('topicId')) } as zodChartInputSchema} />
+            </Suspense>}
         </>
-
     );
 }
 
 interface PairChartProps {
-    selectedChart: Chart;
-    startDate: string;
-    endDate: string;
+    chart: zodChartInputSchema;
 }
 
-function PairChart({ selectedChart, startDate, endDate }: PairChartProps) {
-    const { data } = useSuspenseQuery(GET_PAIRS, { variables: { topicId: selectedChart.topicId, name: selectedChart.key, startDate, endDate } });
+function PairChart({ chart }: PairChartProps) {
+    const { data } = useSuspenseQuery(GET_PAIRS, { variables: chart });
 
-    const chartData = useMemo(() => {
+    const pairs = useMemo(() => {
         if (!data?.pairs) return [];
 
         // Map to LTTB format
+        const valueMap: Record<string, number> = { ON: 1, OFF: 0 };
         const formatted = data.pairs.map((item) => ({
             x: new Date(item.createdAt).getTime(),
-            y: Number(item.value),
+            y: valueMap[item.value] ?? Number(item.value),
             originalDate: item.createdAt,
         }));
 
@@ -103,8 +110,8 @@ function PairChart({ selectedChart, startDate, endDate }: PairChartProps) {
 
         // Map it back and add simple moving average
         const windowSize = 12;
-        const toF = selectedChart.key == 'temperature';
-        const hoursDiff = differenceInHours(endDate, startDate);
+        const toF = chart.name == 'temperature';
+        const hoursDiff = differenceInHours(chart.endDate, chart.startDate);
         return (downsampled as any[]).map((point, index, arr) => {
             // Get a slice of points around the current index
             const start = Math.max(0, index - Math.floor(windowSize / 2));
@@ -125,15 +132,15 @@ function PairChart({ selectedChart, startDate, endDate }: PairChartProps) {
     }, [data]);
 
     return (
-        <LineChart style={{ width: '100%', aspectRatio: 1.618, margin: 'auto', marginBottom: 30 }} responsive data={chartData}>
+        <LineChart style={{ width: '100%', aspectRatio: 1.618, margin: 'auto', marginBottom: 30 }} responsive data={pairs}>
             <CartesianGrid strokeDasharray="5 5" opacity={0.5} />
             <XAxis dataKey="createdAt" fontSize={12} />
             <YAxis width="auto" fontSize={12} />
             <Tooltip content={PairTooltip} />
             <Line type="monotone"
                 dataKey="value"
-                unit={stateMap[selectedChart.key] || ''}
-                name={capitalize(selectedChart.key)}
+                unit={stateMap[chart.name] || ''}
+                name={capitalize(chart.name)}
             />
             <Line
                 type="natural"

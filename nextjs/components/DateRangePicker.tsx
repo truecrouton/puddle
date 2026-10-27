@@ -7,9 +7,10 @@ import { addDays, format, subDays } from 'date-fns';
 interface DateRangePickerProps {
     className?: string;
     error?: FieldError;
+    onDateChange?: (startDate: string, endDate: string) => void;
 }
 
-export default function DateRangePicker({ className = '', error }: DateRangePickerProps) {
+export default function DateRangePicker({ className = '', error, onDateChange = () => { } }: DateRangePickerProps) {
     const [isStartOpen, setIsStartOpen] = useState(false);
     const [isEndOpen, setIsEndOpen] = useState(false);
     const startContainerRef = useRef<HTMLDivElement>(null);
@@ -28,11 +29,13 @@ export default function DateRangePicker({ className = '', error }: DateRangePick
     function setStartDate(selectedDate: Date) {
         setValue('startDate', selectedDate.toISOString());
         if (!displayEndDate) setValue('endDate', addDays(selectedDate, 1).toISOString());
+        onDateChange(selectedDate.toISOString(), getValues('endDate'));
     }
 
     function setEndDate(selectedDate: Date) {
         setValue('endDate', selectedDate.toISOString());
         if (!displayStartDate) setValue('startDate', subDays(selectedDate, 1).toISOString());
+        onDateChange(getValues('startDate'), selectedDate.toISOString());
     }
 
     useEffect(() => {
