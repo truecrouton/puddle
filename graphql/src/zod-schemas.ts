@@ -16,8 +16,8 @@ export const zodPairsInput = z.object({
 }, { error: 'Start date must be before end date.', path: ['endDate'] });
 
 export const zodSetDeviceInputSchema = z.object({
-    deviceId: z.coerce.number().int().nonnegative(),
-    state: z.string().min(1).max(30)
+    id: z.coerce.number().int().nonnegative(),
+    state: z.coerce.number().int().min(0).max(100)
 });
 
 export const zodSignInInputSchema = z.object({

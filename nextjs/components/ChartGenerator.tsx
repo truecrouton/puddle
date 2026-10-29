@@ -109,8 +109,8 @@ function PairChart({ chart }: PairChartProps) {
         const downsampled = LTTB(formatted, 100);
 
         // Map it back and add simple moving average
+        const toF = chart.name === 'temperature' && process.env.NEXT_PUBLIC_TEMPERATURE_CONVERT_TO === 'F';
         const windowSize = 12;
-        const toF = chart.name == 'temperature';
         const hoursDiff = differenceInHours(chart.endDate, chart.startDate);
         return (downsampled as any[]).map((point, index, arr) => {
             // Get a slice of points around the current index

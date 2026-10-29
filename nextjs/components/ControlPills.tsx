@@ -34,7 +34,7 @@ export default function ControlPills({ queryRef }: ControlPillsProps) {
             <div className="bg-base-100 pb-8">
                 <div className="flex flex-wrap gap-3">
                     {sortedControls.map((control) => (
-                        <ControlPill control={control} onClick={() => handleRowClick(control)} key={control.deviceId} />
+                        <ControlPill control={control} onClick={() => handleRowClick(control)} key={control.id} />
                     ))}
                 </div>
             </div>

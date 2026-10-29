@@ -7,7 +7,7 @@
   "scripts": {
     "build:all": "npm run build:server && npm run build:webapp",
     "build:server": "npm run build:only:server && npm run build:only:plugins",
-    "build:only:server": "npm run generate:types && tsc --noEmit && esbuild src/main.ts --bundle --platform=node --target=node22 --minify --external:better-sqlite3 --outfile=dist/main.js",
+    "build:only:server": "npm run generate:types && tsc --noEmit && esbuild src/main.ts --bundle --platform=node --target=node22 --minify --external:better-sqlite3 --outfile=dist/main.js && cp ../graphql/src/schema.graphql dist/",
     "build:only:plugins": "tsc --noEmit && esbuild \"src/plugin/**/*.ts\" --bundle --platform=node --target=node22 --minify --outdir=dist/plugin --outbase=src/plugin",
     "build:webapp": "npm run parcel:build --prefix=../webapp",
     "codegen": "graphql-codegen --config codegen.ts",
@@ -19,7 +19,8 @@
     "migrate:rollback": "knex migrate:rollback",
     "start": "node ./dist/main.js",
     "test": "NODE_ENV=test lab --typescript src/test",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "vitest": "vitest"
   },
   "author": "Pin Tan",
   "dependencies": {
@@ -66,6 +67,7 @@
     "joi-to-typescript": "^4.15.0",
     "knex": "^2.4.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "vitest": "^5.0.5"
   }
 }

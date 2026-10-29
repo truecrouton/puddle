@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
 import "@/app/globals.css";
+import type { Metadata } from "next";
 import { ApolloWrapper } from "@/components/ApolloWrapper";
 import Footer from "@/components/Footer";
 import { ReactNode } from "react";

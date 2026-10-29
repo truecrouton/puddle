@@ -10,7 +10,7 @@ export const { getClient, query, PreloadQuery } = registerApolloClient(async () 
         cache: new InMemoryCache(),
         link: new HttpLink({
             // Must use an absolute URL when fetching your own API route on the server
-            uri: 'http://localhost:3030/api/graphql',
+            uri: process.env.NEXT_PUBLIC_GRAPHQL_URI || '/api/graphql',
             headers: {
                 cookie: sessionToken ? `session=${sessionToken.value}` : '',
             },

@@ -1,6 +1,6 @@
 // src/utils/factories.ts
-import { Device, Topic, User } from '@/generated/resolvers-types';
 import { rand, randAccessory, randVerb, randWord, randFullName, randUserName } from '@ngneat/falso';
+import { Device, Topic, User } from 'puddle-graphql';
 
 export function createDeviceFactory(override: Partial<Device> = {}): Device {
     const kinds = ['toggleable', 'positionable'];

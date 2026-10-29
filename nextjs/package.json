@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "build:webpack": "next build --webpack",
+    "start": "next start -H 127.0.0.1 -p 3000",
     "lint": "eslint",
     "codegen": "graphql-codegen --config codegen.ts",
     "test": "vitest"
@@ -37,6 +38,7 @@
     "@graphql-codegen/client-preset": "^6.2.3",
     "@graphql-codegen/typescript-resolvers": "^6.1.1",
     "@ngneat/falso": "^8.0.2",
+    "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/turbopack": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",

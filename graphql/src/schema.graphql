@@ -3,7 +3,7 @@ input IdInput {
 }
 
 input SetDeviceInput {
-  deviceId: Int!
+  id: Int!
   state: Int!
 }
 
@@ -92,7 +92,7 @@ type Chart {
 }
 
 type Control {
-  deviceId: Int!
+  id: Int!
   name: String!
   kind: String!
   setKey: String!
@@ -200,7 +200,7 @@ type Mutation {
   upsertExpression(input: UpsertExpressionInput!): Expression!
   upsertDevice(input: UpsertDeviceInput!): Device!
   upsertTopic(input: UpsertTopicInput!): Topic!
-  setDevice(input: SetDeviceInput!): Boolean!
+  setDevice(input: SetDeviceInput!): Control!
   signIn(input: SignInInput!): Boolean!
   signOut: Boolean!
   signUp(input: SignUpInput!): Boolean!

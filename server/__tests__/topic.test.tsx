@@ -1,5 +1,5 @@
-import { GET_TOPICS, UPSERT_TOPIC } from '@/lib/queries';
-import { test, expect } from '@/__tests__/utils/fixtures';
+import { GET_TOPICS, UPSERT_TOPIC } from './utils/queries';
+import { test, expect } from './utils/fixtures';
 import { createDeviceFactory, createTopicFactory } from './utils/factories';
 
 test('create and get topics', async ({ executeOperation }) => {

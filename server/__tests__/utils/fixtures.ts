@@ -1,12 +1,12 @@
 // src/utils/test.ts
 import { test as base, expect, beforeAll, afterAll } from 'vitest';
 import { ApolloServer } from '@apollo/server';
-import { typeDefs } from '@/lib/typeDefs';
-import { resolvers } from '@/lib/resolvers';
+import { resolvers } from '../../src/graphql/resolvers';
 import knex from 'knex';
 import path from 'path';
 import { ApolloClient, HttpLink, InMemoryCache, TypedDocumentNode } from '@apollo/client';
 import Database from 'better-sqlite3';
+import { typeDefs } from 'puddle-graphql/server';
 
 async function createTestDatabase() {
     // 1. Initialize Knex with an isolated in-memory SQLite database
@@ -105,7 +105,7 @@ export const test = base.extend<TestFixtures>({
     },
     client: async ({ }, use) => {
         const client = new ApolloClient({
-            link: new HttpLink({ uri: 'http://localhost:3000/api/graphql' }),
+            link: new HttpLink({ uri: 'http://localhost:3030/api/graphql' }),
             cache: new InMemoryCache(),
         });
 

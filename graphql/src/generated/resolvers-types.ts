@@ -36,7 +36,7 @@ export type Chart = {
 
 export type Control = {
   __typename?: 'Control';
-  deviceId: Scalars['Int']['output'];
+  id: Scalars['Int']['output'];
   kind: Scalars['String']['output'];
   name: Scalars['String']['output'];
   setKey: Scalars['String']['output'];
@@ -97,7 +97,7 @@ export type Mutation = {
   deleteDevice: Scalars['Boolean']['output'];
   deleteExpression: Scalars['Boolean']['output'];
   deleteTopic: Scalars['Boolean']['output'];
-  setDevice: Scalars['Boolean']['output'];
+  setDevice: Control;
   signIn: Scalars['Boolean']['output'];
   signOut: Scalars['Boolean']['output'];
   signUp: Scalars['Boolean']['output'];
@@ -227,7 +227,7 @@ export type Schedule = {
 };
 
 export type SetDeviceInput = {
-  deviceId: Scalars['Int']['input'];
+  id: Scalars['Int']['input'];
   state: Scalars['Int']['input'];
 };
 
@@ -471,7 +471,7 @@ export type ChartResolvers<ContextType = any, ParentType extends ResolversParent
 };
 
 export type ControlResolvers<ContextType = any, ParentType extends ResolversParentTypes['Control'] = ResolversParentTypes['Control']> = {
-  deviceId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   kind?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   setKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -524,7 +524,7 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   deleteDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteDeviceArgs, 'input'>>;
   deleteExpression?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteExpressionArgs, 'input'>>;
   deleteTopic?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTopicArgs, 'input'>>;
-  setDevice?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSetDeviceArgs, 'input'>>;
+  setDevice?: Resolver<ResolversTypes['Control'], ParentType, ContextType, RequireFields<MutationSetDeviceArgs, 'input'>>;
   signIn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignInArgs, 'input'>>;
   signOut?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   signUp?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationSignUpArgs, 'input'>>;

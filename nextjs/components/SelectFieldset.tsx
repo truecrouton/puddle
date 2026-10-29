@@ -19,7 +19,7 @@ export const EmptySelectFieldset = ({ label }: EmptySelectFieldsetProps) => {
             <select className="select w-full">
                 <option>Loading options...</option>
             </select>
-            <p className="label text-error-content"></p>
+            <p className="label"></p>
         </fieldset>
     );
 };
@@ -31,7 +31,7 @@ export const SelectFieldset = forwardRef<HTMLSelectElement, SelectFieldsetProps>
             <select className="select w-full" ref={ref} {...rest}>
                 {children}
             </select>
-            <p className="label text-error-content">{error?.message}</p>
+            <p className="label">{error?.message}</p>
         </fieldset>
     );
 });

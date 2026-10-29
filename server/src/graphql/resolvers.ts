@@ -12,6 +12,7 @@ import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from
 import { ApolloServerContext } from './context';
 import { getTopicIds } from '../expressions';
 import { parseISO } from 'date-fns';
+import { puddlePathRoot } from '../path-anchor';
 
 const validateInput = <TResult, TParent, TContext, TArgs>(
     schema: ZodType<any>,
@@ -128,11 +129,11 @@ export const resolvers: Resolvers = {
             return camelCharts;
         }),
         controls: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
-            const stmt = context.db.prepare('SELECT id as device_id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')');
+            const stmt = context.db.prepare('SELECT id, topic_id, name, kind, set_key, state_key, value_on, value_off FROM devices WHERE kind IN (\'dimmable\', \'positionable\', \'toggleable\')');
             const controls = stmt.all() as Record<string, any>[];
 
             const camelControls = controls.map((c) => {
-                const state = cacheGet(c.topic_id, c.state_key ?? '') || '';
+                const state = cacheGet(c.topic_id, c.state_key ?? '') ?? '';
                 return keysToCamelCase({ ...c, state }) as Control;
             });
             return camelControls;
@@ -154,10 +155,9 @@ export const resolvers: Resolvers = {
             const stmt = context.db.prepare('SELECT name, topic_id, key as state_key FROM charts WHERE is_favorite=1');
             const favorites = stmt.all() as Record<string, any>[];
 
-            const displayFarenheit = process.env.TEMPERATURE_CONVERT_TO === 'F';
             const camelFavorites = favorites.map((f) => {
                 const value = cacheGet(f.topic_id, f.state_key) || '?';
-                return keysToCamelCase({ ...f, state: displayFarenheit && f.state_key === 'temperature' ? celsiusToFahrenheit(value) : value }) as Favorite;
+                return keysToCamelCase({ ...f, state: value }) as Favorite;
             });
             return camelFavorites;
         }, { protected: false }),
@@ -166,12 +166,9 @@ export const resolvers: Resolvers = {
             const utcEnd = sqliteDate(false, parseISO(input.endDate));
 
             const pairs = context.db.prepare('SELECT value, created_at FROM pairs where topic_id=? AND pair_id=0 AND is_object=0 AND name=? AND created_at>=? AND created_at<=?').all(input.topicId, input.name, utcStart, utcEnd) as {}[];
+
             const camelPairs = pairs.map((p) => keysToCamelCase(p) as Pair);
-
-            const displayFarenheit = input.name === 'temperature' && process.env.TEMPERATURE_CONVERT_TO === 'F';
-            const convertedPairs = camelPairs.map((p) => displayFarenheit ? { ...p, value: celsiusToFahrenheit(p.value) } : p);
-
-            return convertedPairs;
+            return camelPairs;
         }),
         schedule: validateInput(zodEmptyInputSchema, async (_parent, _input, context: ApolloServerContext) => {
             const stmt = context.db.prepare("SELECT id, name, trigger FROM automations WHERE trigger IN ('sun', 'time') AND (position=? OR trigger_at=?)");
@@ -254,25 +251,27 @@ export const resolvers: Resolvers = {
             return true;
         }),
         setDevice: validateInput(zodSetDeviceInputSchema, async (_parent, { input }: { input: SetDeviceInput; }, context: ApolloServerContext) => {
-            const device = context.db.prepare('SELECT topic, kind, set_key, set_suffix, value_on, value_off FROM devices LEFT JOIN topics on topics.id=devices.topic_id WHERE devices.id=?').get(input.deviceId) as Device;
+            const device = context.db.prepare('SELECT devices.id, name, topic, kind, set_key, state_key, set_suffix, topic_id, value_on, value_off FROM devices LEFT JOIN topics on topics.id=devices.topic_id WHERE devices.id=?').get(input.id) as Record<string, any>;
 
             let message;
             switch (device.kind) {
                 case "toggleable":
-                    message = { [device.setKey as string]: input.state > 0 ? device.valueOn : device.valueOff };
+                    message = { [device.set_key as string]: input.state > 0 ? device.value_on : device.value_off };
                     break;
                 case "dimmable":
                 case "positionable":
-                    message = { [device.setKey as string]: input.state };
+                    message = { [device.set_key as string]: input.state };
                     break;
             }
 
-            if (process.env.NODE_ENV === 'test') return true;
+            const camelControl = keysToCamelCase({ ...device, state: message![device.set_key] }) as Control;
 
-            const topic = [device.topic, device.setSuffix].join('/');
+            if (process.env.NODE_ENV === 'test') return camelControl;
+
+            const topic = [device.topic, device.set_suffix].join('/');
             context.mqtt.publish(topic, JSON.stringify(message));
 
-            return true;
+            return camelControl;
         }),
         signIn: validateInput(zodSignInInputSchema, async (_parent, { input }: { input: SignInInput; }, context: ApolloServerContext) => {
             const user = context.db.prepare('SELECT id, password, is_admin FROM users WHERE username=?').get(input.username) as User;
@@ -319,7 +318,7 @@ export const resolvers: Resolvers = {
         }),
         signUp: validateInput(zodSignUpInputSchema, async (_parent, { input }: { input: SignUpInput; }, context: ApolloServerContext) => {
             const secret: any = {};
-            dotenv.config({ path: path.resolve(process.cwd(), 'secret.env'), processEnv: secret });
+            dotenv.config({ path: `${puddlePathRoot}/../secret.env`, processEnv: secret });
             if (input.authPhrase !== secret.AUTH_PHRASE) throw new GraphQLError(
                 'The authorization phrase is invalid or disabled',
                 { extensions: { code: 'BAD_USER_INPUT' } }

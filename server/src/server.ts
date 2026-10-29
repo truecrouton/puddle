@@ -11,7 +11,7 @@ export let server: Server;
 export const init = async function (): Promise<Server> {
     const options: Hapi.ServerOptions = {
         port: process.env.PUDDLE_PORT || 4000,
-        host: process.env.PUDDLE_PORT || '127.0.0.1'
+        host: process.env.PUDDLE_HOST || '127.0.0.1'
     };
     if (process.env.TLS_CERT && process.env.TLS_KEY) {
         options.tls = {

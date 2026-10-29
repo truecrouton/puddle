@@ -1,5 +1,5 @@
-import { SIGN_UP, SIGN_IN } from '@/lib/queries';
-import { test, expect } from '@/__tests__/utils/fixtures';
+import { SIGN_UP, SIGN_IN } from './utils/queries';
+import { test, expect } from './utils/fixtures';
 import { createUserFactory } from './utils/factories';
 
 test('signs up and signs in a user', async ({ client }) => {
