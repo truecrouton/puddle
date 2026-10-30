@@ -23,7 +23,7 @@ async function automationDelete(request: Request, h: ResponseToolkit): Promise<R
 
     db.transaction(() => {
         db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(automationId);
-        db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(automationId);
+        db.prepare('DELETE FROM expression_topics WHERE automation_id=?').run(automationId);
         db.prepare('DELETE FROM automations WHERE id=?').run(automationId);
     })();
 
@@ -98,7 +98,7 @@ async function automationExpressionSetup(request: Request, h: ResponseToolkit): 
     type Expression = AutomationExpressionSetupPayloadInterface['expressions'][number];
 
     const stepStmt = db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
-    const topicStmt = db.prepare('INSERT INTO automation_topics (automation_id, topic_id) VALUES (?, ?)');
+    const topicStmt = db.prepare('INSERT INTO expression_topics (expression_id, automation_id, topic_id) VALUES (?, ?, ?)');
 
     function storeExpression(expression: Expression, automationId: number, parentExpressionId: number) {
         const isElseStep = expression.is_else_step ? 1 : 0;
@@ -109,7 +109,7 @@ async function automationExpressionSetup(request: Request, h: ResponseToolkit): 
         if (expression.kind == 'if' && typeof expression.expression == 'string') {
             try {
                 const topicIds = getTopicIds(expression.expression);
-                topicIds.forEach((topicId) => topicStmt.run(automationId, topicId));
+                topicIds.forEach((topicId) => topicStmt.run(expression.id, automationId, topicId));
             }
             catch (error: unknown) {
                 if (error instanceof Error) {
@@ -128,7 +128,7 @@ async function automationExpressionSetup(request: Request, h: ResponseToolkit): 
 
     db.transaction(() => {
         db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(automationId);
-        db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(automationId);
+        db.prepare('DELETE FROM expression_topics WHERE automation_id=?').run(automationId);
         payload.expressions?.forEach((expr) => {
             storeExpression(expr, automationId, 0);
         });
@@ -363,7 +363,7 @@ async function topicsGet(request: Request, h: ResponseToolkit): Promise<Response
     const deviceStmt = db.prepare('SELECT id as device_id, name, kind FROM devices where topic_id=?');
     const automationStmt = db.prepare('SELECT id as automation_id, name, trigger FROM automations WHERE trigger=\'topic\' AND topic_id=?');
     const expressionStmt = db.prepare('SELECT automation_id, automations.name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
-    const conditionalStmt = db.prepare('SELECT automation_id, name, trigger FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
+    const conditionalStmt = db.prepare('SELECT automation_id, name, trigger FROM expression_topics LEFT JOIN automations ON automations.id=expression_topics.automation_id WHERE expression_topics.topic_id=?');
     const topics = baseTopics.map((t) => {
         const usedIn = new Map();
         expressionStmt.all(t.topic_id, t.topic_id).forEach((e: any) => usedIn.set(e.automation_id, e));

@@ -59,7 +59,7 @@ const puddleInit = async () => {
 
     initFastify();
 
-    init().then(() => start());
+    if (process.env.LEGACY_WEBAPP === 'YES') init().then(() => start());
 };
 
 puddleInit();

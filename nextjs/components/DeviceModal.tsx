@@ -116,7 +116,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
             <form onSubmit={handleSubmit(onSubmit)} key={deviceId ?? 'new'}>
                 <fieldset disabled={loading} >
                     <input type="hidden" name="id" value={deviceId} />
-                    <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
+                    <TopicSelectFieldset label='Topic' control={control} name="topicId" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <InputFieldset label='Name' error={errors.name} {...register("name")} />
                         <SelectFieldset label='Kind' error={errors.kind} {...register("kind")} >

@@ -126,7 +126,7 @@ export default function ChartModal({ isOpen, onClose, onUpserted, onDeleted, cha
                 <fieldset>
                     <input type="hidden" {...register('id')} />
                     <InputFieldset label='Name' error={errors.name} {...register("name")} />
-                    <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
+                    <TopicSelectFieldset label='Topic' control={control} name="topicId" />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className='md:col-span-2'>
                             <InputFieldset label='Key' error={errors.key} {...register("key")} />

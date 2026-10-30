@@ -7,6 +7,7 @@ import ErrorAlert from "./ErrorAlert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import { Logo } from "./Logo";
 
 export default function ProtectedNavBar() {
     const [signOutDropped, setSignOutDropped] = useState(false);
@@ -28,7 +29,7 @@ export default function ProtectedNavBar() {
                     <label htmlFor="navbar-1-toggle" className="btn btn-ghost lg:hidden">
                         <svg aria-label="Menu" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /></svg>
                     </label>
-                    <Link className="btn btn-ghost" href="/dashboard"><img src="/puddle.svg" alt="Puddle Logo" className="h-6 bject-contain" /></Link>
+                    <Link className="btn btn-ghost" href="/dashboard"><Logo className="h-6" /></Link>
                 </div>
                 <div className="navbar-end hidden lg:flex">
                     <ul className="menu menu-horizontal px-1">

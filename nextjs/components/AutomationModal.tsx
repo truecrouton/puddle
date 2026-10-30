@@ -139,7 +139,7 @@ export default function AutomationModal({ isOpen, onClose, onSuccess, automation
                         <option value="sunsetStart" key="sunsetStart">Sunset Start</option>
                     </SelectFieldset>}
                     {selectedTrigger == 'time' && <InputFieldset label='Trigger At' error={errors.triggerAt} {...register("triggerAt")} />}
-                    {selectedTrigger == 'topic' && <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />}
+                    {selectedTrigger == 'topic' && <TopicSelectFieldset label='Topic' control={control} name="topicId" />}
                     {selectedTrigger == 'topic' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <InputFieldset label='Trigger Key' error={errors.triggerKey} {...register("triggerKey")} />
                         <InputFieldset label='Trigger Value' error={errors.triggerValue} {...register("triggerValue")} />

@@ -1,11 +1,10 @@
 import { Resolvers, Device, Topic, ResolverFn, SignInInput, UpsertTopicInput, SignUpInput, User, Favorite, Control, Automation, Expression, Chart, SetDeviceInput, Schedule, UpsertDeviceInput, zodUpsertExpressionSchema, UpsertExpressionInput, IdInput, zodUpsertAutomationSchema, UpsertAutomationInput, Status, UpsertChartInput, zodUpsertChartInputSchema, zodEmptyInputSchema, zodIdInputSchema, zodSetDeviceInputSchema, zodSignInInputSchema, zodSignUpInputSchema, zodUpsertDeviceSchema, zodUpsertTopicInputSchema, zodPairsInput, Pair } from 'puddle-graphql';
-import { celsiusToFahrenheit, keysToCamelCase } from '../helper';
+import { keysToCamelCase } from '../helper';
 import { encrypt } from './session';
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { ZodType } from 'zod';
 import { GraphQLError } from 'graphql';
 import dotenv from 'dotenv';
-import path from 'path';
 import { cacheGet, cachePairsGet, sqliteDate } from '../storage';
 import { scheduledJobs } from 'node-schedule';
 import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from '../schedule';
@@ -94,11 +93,11 @@ export const resolvers: Resolvers = {
         },
         usedInAutomations: async (parent: { id: number; }, _input, context: ApolloServerContext) => {
             const expressionStmt = context.db.prepare('SELECT automation_id as id, automations.name, trigger FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
-            const conditionalStmt = context.db.prepare('SELECT automation_id as id, name, trigger FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
+            const conditionalStmt = context.db.prepare('SELECT automation_id as id, name, trigger FROM expression_topics LEFT JOIN automations ON automations.id=expression_topics.automation_id WHERE expression_topics.topic_id=?');
 
             const usedIn = new Map();
-            expressionStmt.all(parent.id, parent.id).forEach((e: any) => usedIn.set(e.automation_id, e));
-            conditionalStmt.all(parent.id).forEach((c: any) => usedIn.set(c.automation_id, c));
+            expressionStmt.all(parent.id, parent.id).forEach((e: any) => usedIn.set(e.id, e));
+            conditionalStmt.all(parent.id).forEach((c: any) => usedIn.set(c.id, c));
 
             const automations = [...usedIn.values()] as Automation[];
             if (!automations) return [];
@@ -200,7 +199,7 @@ export const resolvers: Resolvers = {
         deleteAutomation: validateInput(zodIdInputSchema, async (_parent, { input }: { input: IdInput; }, context: ApolloServerContext) => {
             context.db.transaction(() => {
                 context.db.prepare('DELETE FROM automation_expressions WHERE automation_id=?').run(input.id);
-                context.db.prepare('DELETE FROM automation_topics WHERE automation_id=?').run(input.id);
+                context.db.prepare('DELETE FROM expression_topics WHERE automation_id=?').run(input.id);
                 context.db.prepare('DELETE FROM automations WHERE id=?').run(input.id);
             })();
 
@@ -235,7 +234,7 @@ export const resolvers: Resolvers = {
             const automations = context.db.prepare('SELECT id, name FROM automations WHERE topic_id=?').all(input.id);
             const charts = context.db.prepare('SELECT id, name FROM charts WHERE topic_id=?').all(input.id);
             const expressionStmt = context.db.prepare('SELECT automation_id as id, automations.name FROM automation_expressions LEFT JOIN automations on automations.id=automation_expressions.automation_id LEFT JOIN devices ON devices.id=automation_expressions.device_id WHERE automation_expressions.topic_id=? OR devices.topic_id=?');
-            const conditionalStmt = context.db.prepare('SELECT automation_id as id, name FROM automation_topics LEFT JOIN automations ON automations.id=automation_topics.automation_id WHERE automation_topics.topic_id=?');
+            const conditionalStmt = context.db.prepare('SELECT automation_id as id, name FROM expression_topics LEFT JOIN automations ON automations.id=expression_topics.automation_id WHERE expression_topics.topic_id=?');
 
             const usedIn = new Map();
             expressionStmt.all(input.id, input.id).forEach((e: any) => usedIn.set(e.automation_id, e));
@@ -356,9 +355,10 @@ export const resolvers: Resolvers = {
             return keysToCamelCase(device);
         }),
         upsertExpression: validateInput(zodUpsertExpressionSchema, async (_parent, { input }: { input: UpsertExpressionInput; }, context: ApolloServerContext) => {
+            let topicIds: number[] = [];
             if (input.kind == 'if') {
                 try {
-                    getTopicIds(input.expression!);
+                    topicIds = getTopicIds(input.expression!);
                 }
                 catch (error) {
                     throw new GraphQLError(
@@ -368,12 +368,24 @@ export const resolvers: Resolvers = {
                 }
             }
 
-            const result = input.id > 0 ?
-                context.db.prepare('UPDATE automation_expressions SET automation_id=?, kind=?, expression=?, conditional_expression_id=?, topic_id=?, message=?, device_id=?, state=?, is_else_step=? WHERE id=?').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0, input.id) :
-                context.db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0);
+            const upsertRowId = context.db.transaction(() => {
+                const result = input.id > 0 ?
+                    context.db.prepare('UPDATE automation_expressions SET automation_id=?, kind=?, expression=?, conditional_expression_id=?, topic_id=?, message=?, device_id=?, state=?, is_else_step=? WHERE id=?').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0, input.id) :
+                    context.db.prepare('INSERT INTO automation_expressions (automation_id, kind, expression, conditional_expression_id, topic_id, message, device_id, state, is_else_step) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)').run(input.automationId, input.kind, input.expression, input.conditionalExpressionId, input.topicId, input.message, input.deviceId, input.state, input.isElseStep ? 1 : 0);
+
+                const expressionId = input.id > 0 ? input.id : result.lastInsertRowid;
+
+                context.db.prepare('DELETE FROM expression_topics WHERE expression_id=?').run(expressionId);
+                if (topicIds.length > 0) {
+                    const topicStmt = context.db.prepare('INSERT INTO expression_topics (expression_id, automation_id, topic_id) VALUES (?, ?, ?)');
+                    topicIds.forEach((topicId) => topicStmt.run(expressionId, input.automationId, topicId));
+                }
+
+                return expressionId;
+            })();
 
             const stmt = context.db.prepare('SELECT automation_expressions.id, automation_id, automation_expressions.kind, expression, is_else_step, automation_expressions.topic_id, conditional_expression_id, topic, message, device_id, devices.name as device_name, devices.kind as device_kind, state FROM automation_expressions LEFT JOIN topics on topics.id=automation_expressions.topic_id LEFT JOIN devices on devices.id=automation_expressions.device_id WHERE automation_expressions.id=?');
-            const expression = stmt.get(input.id ? input.id : result.lastInsertRowid) as Expression;
+            const expression = stmt.get(upsertRowId) as Expression;
 
             return keysToCamelCase(expression);
         }),

@@ -11,7 +11,7 @@ import { GET_PAIRS } from '@/lib/queries';
 import { useSuspenseQuery } from '@apollo/client/react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { LTTB } from 'downsample';
-import { differenceInHours, format } from 'date-fns';
+import { addMinutes, differenceInHours, format, parseISO } from 'date-fns';
 import { capitalize, celsiusToFahrenheit } from '@/lib/utilities';
 import { stateMap } from './FavoritePill';
 import { ChartKeySelectFieldset } from './ChartKeySelectFieldset';
@@ -51,39 +51,56 @@ export default function ChartGenerator({ onChange, chartRequest }: ChartGenerato
     const {
         getValues,
         control,
+        handleSubmit,
         formState: { errors },
     } = formMethods;
 
+    function validateForm() {
+        // Delay to let react-hook-form register new value first
+        setTimeout(() => {
+            handleSubmit(() => { })();
+        }, 0);
+    }
+
     useEffect(() => {
-        setTopicId(chartRequest?.topicId || 0);
-    }, [chartRequest?.topicId]);
+        setTopicId(chartRequest.topicId || 0);
+        if (chartRequest.topicId) validateForm();
+    }, [chartRequest.topicId]);
+
+    function handleTopicChange() {
+        validateForm();
+        onChange(getValues('name'), Number(getValues('topicId')));
+    }
 
     function handleDateChange(startDate: string, endDate: string) {
         chartInput.current.startDate = startDate;
         chartInput.current.endDate = endDate;
+        validateForm();
     }
 
     const validationResult = zodPairsInput.safeParse({ ...getValues(), topicId: Number(getValues('topicId')) });
-
+    const offset = new Date().getTimezoneOffset();
     return (
         <>
-            <form className='mb-6' onChange={() => onChange(getValues('name'), Number(getValues('topicId')))}>
+            <form className='mb-6' onChange={handleTopicChange}>
                 <fieldset>
                     <div className="grid grid-cols-1 md:grid-cols-16 gap-2">
                         <div className='md:col-span-6'>
-                            <TopicSelectFieldset label='Topic' error={errors.topicId?.message} control={control} name="topicId" />
+                            <TopicSelectFieldset label='Topic' control={control} name="topicId" />
                         </div>
-                        <ChartKeySelectFieldset className='md:col-span-4' label='Key' error={errors.name?.message} control={control} name="name" topicId={topicId} />
+                        <ChartKeySelectFieldset className='md:col-span-4' label='Key' control={control} name="name" topicId={topicId} />
                         <FormProvider {...formMethods}>
                             <DateRangePicker className='md:col-span-6' error={errors.endDate} onDateChange={handleDateChange} />
                         </FormProvider>
                     </div>
                 </fieldset>
-            </form>
+            </form >
 
-            {validationResult.success && <Suspense fallback={<ChartSkeleton />}>
-                <PairChart chart={{ ...getValues(), topicId: Number(getValues('topicId')) } as zodChartInputSchema} />
-            </Suspense>}
+            {
+                validationResult.success && < Suspense fallback={<ChartSkeleton />}>
+                    <PairChart chart={{ name: getValues('name'), topicId: Number(getValues('topicId')), startDate: addMinutes(getValues('startDate'), offset).toISOString(), endDate: addMinutes(getValues('endDate'), offset).toISOString() } as zodChartInputSchema} />
+                </Suspense >
+            }
         </>
     );
 }
@@ -101,7 +118,7 @@ function PairChart({ chart }: PairChartProps) {
         // Map to LTTB format
         const valueMap: Record<string, number> = { ON: 1, OFF: 0 };
         const formatted = data.pairs.map((item) => ({
-            x: new Date(item.createdAt).getTime(),
+            x: parseISO(`${item.createdAt}Z`).getTime(),
             y: valueMap[item.value] ?? Number(item.value),
             originalDate: item.createdAt,
         }));
@@ -123,7 +140,7 @@ function PairChart({ chart }: PairChartProps) {
             const movingAverage = sum / windowSlice.length;
 
             return {
-                createdAt: format(new Date(point.x), hoursDiff > 30 ? 'M/d/yy h:ma' : 'h:mma'),
+                createdAt: format(point.x, hoursDiff > 30 ? 'M/d/yy h:ma' : 'h:mma'),
                 value: toF ? celsiusToFahrenheit(point.y) : point.y,
                 sma: toF ? celsiusToFahrenheit(movingAverage) : movingAverage,
                 timestamp: format(point.x, 'MM/dd/yyyy hh:mma')

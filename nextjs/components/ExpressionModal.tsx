@@ -145,8 +145,8 @@ export default function ExpressionModal({ isOpen, onClose, onSuccess, expression
                             <option value={option.value} key={option.value}>{option.label}</option>
                         ))}
                     </SelectFieldset>
-                    {selectedKind == 'device' && <DeviceSelectFieldset label='Device' error={errors.deviceId?.message} control={control} name="deviceId" />}
-                    {selectedKind == 'publish' && <TopicSelectFieldset label='Topic' error={errors.deviceId?.message} control={control} name="topicId" />}
+                    {selectedKind == 'device' && <DeviceSelectFieldset label='Device' control={control} name="deviceId" />}
+                    {selectedKind == 'publish' && <TopicSelectFieldset label='Topic' control={control} name="topicId" />}
                     {selectedKind == 'device' && <InputFieldset label='State' error={errors.state} {...register("state")} />}
                     {['notify', 'publish'].includes(selectedKind) && <InputFieldset label='Message' error={errors.message} {...register("message")} />}
                     {selectedKind == 'if' && <InputFieldset label='Expression' error={errors.expression} {...register("expression")} />}

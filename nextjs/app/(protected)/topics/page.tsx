@@ -22,7 +22,7 @@ async function PreloadedDevices() {
 
 async function Home() {
   return (
-    <main className="max-w-5xl mx-auto p-4">
+    <>
       <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">
         <Link className="btn btn-primary btn-sm btn-circle mr-3" href='/dashboard'>
           <ArrowUp className='h-6 w-6' />
@@ -30,7 +30,7 @@ async function Home() {
         Peruse your mqtt topics
       </h1>
       <PreloadedDevices />
-    </main>
+    </>
   );
 }
 
