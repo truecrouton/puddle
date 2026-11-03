@@ -21,7 +21,7 @@ export function createDeviceFactory(override: Partial<Device> = {}): Device {
 export function createTopicFactory(override: Partial<Topic> = {}): Topic {
     return {
         id: 0,
-        topic: `zigbee2mqtt/${randWord().toLowerCase()}/${randWord().toLowerCase()}`
+        topic: `${process.env.BASE_TOPIC}/${randWord().toLowerCase()}_${randWord().toLowerCase()}`
     };
 }
 

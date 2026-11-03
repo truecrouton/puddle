@@ -102,7 +102,7 @@ export default function ChartModal({ isOpen, onClose, onUpserted, onDeleted, cha
     }, [isOpen]);
 
     const onSubmit = async (data: ChartData) => {
-        const r = await upsertChart({
+        await upsertChart({
             variables: {
                 input: data
             }

@@ -5,8 +5,7 @@
 dist
 node_modules
 puddle.env
-puddle.sqlite
-puddle.sqlite-shm
-puddle.sqlite-wal
+puddle.sqlite*
+puddle_test.sqlite*
 secret.env
 devices.json

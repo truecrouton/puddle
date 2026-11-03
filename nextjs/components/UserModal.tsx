@@ -46,6 +46,7 @@ export default function UserModal({ isOpen, onClose, onSuccess }: UserModalProps
                 input: data
             }
         });
+        reset(data);
         onSuccess();
     };
 

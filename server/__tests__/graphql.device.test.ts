@@ -1,6 +1,12 @@
-import { GET_DEVICE, GET_DEVICE_STUBS, UPSERT_DEVICE, UPSERT_TOPIC } from './utils/queries';
-import { test, expect } from './utils/fixtures';
+import { GET_DEVICE, GET_DEVICE_STUBS, SET_DEVICE, UPSERT_DEVICE, UPSERT_TOPIC } from './utils/queries';
+import { test, expect, beforeAll } from './utils/fixtures';
 import { createDeviceFactory, createTopicFactory } from './utils/factories';
+import { storageInit, storeMessage } from '../src/storage';
+
+beforeAll(async () => {
+    process.env.BASE_TOPIC = 'zigbee2mqtt';
+    storageInit('__tests__/puddle_test.sqlite');
+});
 
 test('create and get a device and get devices', async ({ executeOperation }) => {
     const topic = createTopicFactory();
@@ -80,4 +86,72 @@ test('create and update a device', async ({ executeOperation }) => {
     expect(getUpdatedDeviceRes.device.valueOn).toEqual(updatedDevice.valueOn);
     expect(getUpdatedDeviceRes.device.valueOff).toEqual(updatedDevice.valueOff);
     expect(getUpdatedDeviceRes.device.topicId).toEqual(topicRes.upsertTopic.id);
+});
+
+test('create and set a toggleable device', async ({ executeOperation }) => {
+    const topic = createTopicFactory();
+    const topicId = storeMessage(topic.topic, '{"humidity":88,"state":"OFF","update":{"state":"available"}}');
+    expect(topicId).toBeGreaterThan(0);
+
+    const device = createDeviceFactory({ topicId, kind: 'toggleable' });
+    const deviceRes = await executeOperation(UPSERT_DEVICE, { input: device });
+    expect(deviceRes.upsertDevice).toBeTruthy();
+    expect(deviceRes.upsertDevice.id).toBeTypeOf('number');
+    expect(deviceRes.upsertDevice.id).toBeGreaterThan(0);
+    expect(deviceRes.upsertDevice.name).toEqual(device.name);
+
+    const getDeviceRes = await executeOperation(GET_DEVICE, { id: deviceRes.upsertDevice.id });
+    expect(getDeviceRes.device).toBeTruthy();
+    expect(getDeviceRes.device.id).toEqual(deviceRes.upsertDevice.id);
+    expect(getDeviceRes.device.name).toEqual(device.name);
+    expect(getDeviceRes.device.stateKey).toEqual(device.stateKey);
+    expect(getDeviceRes.device.setKey).toEqual(device.setKey);
+    expect(getDeviceRes.device.setSuffix).toEqual(device.setSuffix);
+    expect(getDeviceRes.device.valueOn).toEqual(device.valueOn);
+    expect(getDeviceRes.device.valueOff).toEqual(device.valueOff);
+    expect(getDeviceRes.device.topicId).toEqual(topicId);
+
+    const setDeviceOnRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 1 } });
+    expect(setDeviceOnRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
+    expect(setDeviceOnRes.setDevice.state).toEqual(device.valueOn);
+
+    const setDeviceOffRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 0 } });
+    expect(setDeviceOffRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
+    expect(setDeviceOffRes.setDevice.state).toEqual(device.valueOff);
+});
+
+test('create and set a positionable device', async ({ executeOperation }) => {
+    const topic = createTopicFactory();
+    const topicId = storeMessage(topic.topic, '{"humidity":88,"state":0,"update":{"state":"available"}}');
+    expect(topicId).toBeGreaterThan(0);
+
+    const device = createDeviceFactory({ topicId, kind: 'positionable', valueOn: "100", valueOff: "0" });
+    const deviceRes = await executeOperation(UPSERT_DEVICE, { input: device });
+    expect(deviceRes.upsertDevice).toBeTruthy();
+    expect(deviceRes.upsertDevice.id).toBeTypeOf('number');
+    expect(deviceRes.upsertDevice.id).toBeGreaterThan(0);
+    expect(deviceRes.upsertDevice.name).toEqual(device.name);
+
+    const getDeviceRes = await executeOperation(GET_DEVICE, { id: deviceRes.upsertDevice.id });
+    expect(getDeviceRes.device).toBeTruthy();
+    expect(getDeviceRes.device.id).toEqual(deviceRes.upsertDevice.id);
+    expect(getDeviceRes.device.name).toEqual(device.name);
+    expect(getDeviceRes.device.stateKey).toEqual(device.stateKey);
+    expect(getDeviceRes.device.setKey).toEqual(device.setKey);
+    expect(getDeviceRes.device.setSuffix).toEqual(device.setSuffix);
+    expect(getDeviceRes.device.valueOn).toEqual(device.valueOn);
+    expect(getDeviceRes.device.valueOff).toEqual(device.valueOff);
+    expect(getDeviceRes.device.topicId).toEqual(topicId);
+
+    const setDeviceOnRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 100 } });
+    expect(setDeviceOnRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
+    expect(setDeviceOnRes.setDevice.state).toEqual(device.valueOn);
+
+    const setDeviceMidRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 22 } });
+    expect(setDeviceMidRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
+    expect(setDeviceMidRes.setDevice.state).toEqual("22");
+
+    const setDeviceOffRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 0 } });
+    expect(setDeviceOffRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
+    expect(setDeviceOffRes.setDevice.state).toEqual(device.valueOff);
 });

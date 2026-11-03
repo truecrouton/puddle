@@ -16,7 +16,7 @@ experiment('setup and control devices', () => {
     let server: Server;
 
     before((async () => {
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

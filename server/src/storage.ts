@@ -125,8 +125,9 @@ export function sqliteDate(offsetToUtc: boolean, date?: Date): string {
     return offsetToUtc ? format(addMinutes(originalDate, originalDate.getTimezoneOffset()), dateFormat) : format(originalDate, dateFormat);
 }
 
-export function storageInit(options?: BetterSqllite3.Options): BetterSqllite3.Database {
-    db = new BetterSqllite3(`${puddlePathRoot}/../data/puddle.sqlite`, options);
+export function storageInit(dbFile: string = ''): BetterSqllite3.Database {
+    const file = dbFile.length ? dbFile : `${puddlePathRoot}/../data/puddle.sqlite`;
+    db = new BetterSqllite3(file, { fileMustExist: true });
     db.pragma('journal_mode = WAL');
 
     return db;

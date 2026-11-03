@@ -5,36 +5,25 @@ import { resolvers } from '../../src/graphql/resolvers';
 import knex from 'knex';
 import path from 'path';
 import { ApolloClient, HttpLink, InMemoryCache, TypedDocumentNode } from '@apollo/client';
-import Database from 'better-sqlite3';
 import { typeDefs } from 'puddle-graphql/server';
+import { storageInit } from '../../src/storage';
 
 async function createTestDatabase() {
-    // 1. Initialize Knex with an isolated in-memory SQLite database
-    let db: Database.Database | undefined;
-
+    const dbFile = path.resolve(process.cwd(), '__tests__/puddle_test.sqlite');
     const migrator = knex({
         client: 'better-sqlite3',
         connection: {
-            filename: path.resolve(process.cwd(), '__tests__/test-db.sqlite'),
-        },
-        pool: {
-            // Capture the raw better-sqlite3 instance when the pool creates it
-            afterCreate: (conn: Database.Database, done: Function) => {
-                db = conn;
-                done(null, conn);
-            },
+            filename: dbFile,
         },
         useNullAsDefault: true, // Required for SQLite
         migrations: {
-            // Point this to your actual project migrations folder
             directory: path.resolve(process.cwd(), '../server/data/migrations'),
         },
     });
 
-    // 2. Run all migrations so your tables exist
     await migrator.migrate.latest();
 
-    return db;
+    return storageInit(dbFile);
 }
 function createApolloServer() {
     return new ApolloServer({
@@ -43,7 +32,6 @@ function createApolloServer() {
     });
 }
 
-// Define the types for your custom fixtures
 type TestFixtures = {
     db: any;
     executeOperation: <TResult, TVariables>(
@@ -54,7 +42,6 @@ type TestFixtures = {
 };
 
 export const test = base.extend<TestFixtures>({
-    // 1. Define the 'db' fixture (spins up per test)
     db: async ({ }, use) => {
         const db = await createTestDatabase();
 
@@ -81,7 +68,7 @@ export const test = base.extend<TestFixtures>({
                     variables: variables as Record<string, any>
                 },
                 {
-                    contextValue: { db, userId: 1 },
+                    contextValue: { db, userId: 1, reply: { setCookie: () => { } } },
                 }
             );
 

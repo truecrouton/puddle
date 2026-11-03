@@ -95,7 +95,7 @@ export default function DeviceModal({ isOpen, onClose, onSuccess, deviceId }: De
                 input: data
             }
         });
-        reset();
+        reset(data);
         onSuccess();
     };
 

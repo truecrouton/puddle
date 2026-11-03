@@ -83,7 +83,7 @@ export default function AutomationModal({ isOpen, onClose, onSuccess, automation
                 input: data
             }
         });
-        reset();
+        reset(data);
         onSuccess();
     };
 

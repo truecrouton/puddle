@@ -16,7 +16,7 @@ experiment('setup charts', () => {
     let server: Server;
 
     before((async () => {
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

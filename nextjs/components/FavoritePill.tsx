@@ -1,11 +1,13 @@
 import { celsiusToFahrenheit } from "@/lib/utilities";
-import { BatteryCharging, CircleQuestionMark, LucideIcon, ThermometerSun, WavesVertical } from "lucide-react";
+import { BatteryCharging, CircleQuestionMark, GitCommitVertical, LucideIcon, ScanFace, ThermometerSun, WavesVertical } from "lucide-react";
 import { Favorite } from "puddle-graphql";
 
 const iconMap: Record<string, LucideIcon> = {
     temperature: ThermometerSun,
     humidity: WavesVertical,
     battery: BatteryCharging,
+    occupancy: ScanFace,
+    state: GitCommitVertical
 };
 
 export const stateMap: Record<string, string> = {
@@ -26,7 +28,8 @@ interface FavoritePillProps {
 export default function FavoritePill({ favorite, onClick }: FavoritePillProps) {
     const IconComponent = iconMap[favorite.stateKey] || CircleQuestionMark;
 
-    const state = favorite.stateKey === 'temperature' && process.env.NEXT_PUBLIC_TEMPERATURE_CONVERT_TO === 'F' ? celsiusToFahrenheit(favorite.state) : favorite.state;
+    const state = favorite.stateKey === 'temperature' && process.env.NEXT_PUBLIC_TEMPERATURE_CONVERT_TO === 'F' ? celsiusToFahrenheit(Number(favorite.state)) : favorite.state;
+    const printState = isNaN(Number(state)) ? state : Math.round(Number(state));
 
     return (
         <button className="inline-flex items-center rounded-full w-fit bg-base-300 text-base-content hover:bg-accent hover:text-accent-content transition-colors duration-200 cursor-pointer px-5 py-2" onClick={onClick}>
@@ -36,7 +39,7 @@ export default function FavoritePill({ favorite, onClick }: FavoritePillProps) {
                 <div className="text-xs justify-start">{favorite.stateKey}</div>
             </div>
             <h3 className="font-bold ml-2">
-                {`${state}${stateMap[favorite.stateKey]}`}
+                {`${printState}${stateMap[favorite.stateKey] || ''}`}
             </h3>
         </button>
     );

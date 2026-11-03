@@ -3,10 +3,8 @@ export function capitalize(str: string): string {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-export function celsiusToFahrenheit(celsius: number | string): string {
-    const degress = Number(celsius);
-    if (isNaN(degress)) return '';
-    return (degress * 9.0 / 5.0 + 32.0).toFixed(2);
+export function celsiusToFahrenheit(celsius: number) {
+    return (celsius * 9.0 / 5.0 + 32.0).toFixed(2);
 }
 
 export function sortArray<T>(array: T[] | undefined | null, over: keyof T): T[] {

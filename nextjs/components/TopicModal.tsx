@@ -77,7 +77,7 @@ export default function TopicModal({ isOpen, onClose, onSuccess, topic }: TopicM
                 input: data
             }
         });
-        reset();
+        reset(data);
         onSuccess();
     };
 

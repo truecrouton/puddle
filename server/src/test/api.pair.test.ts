@@ -17,7 +17,7 @@ experiment('retrieve pairs', () => {
     let server: Server;
 
     before((async () => {
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

@@ -15,7 +15,7 @@ experiment('setup users', () => {
     let server: Server;
 
     before((async () => {
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

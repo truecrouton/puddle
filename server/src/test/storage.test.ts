@@ -17,7 +17,7 @@ experiment('store and get mqtt messages', () => {
     let server: Server;
 
     before((async () => {
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

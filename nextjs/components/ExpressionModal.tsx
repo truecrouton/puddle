@@ -114,7 +114,7 @@ export default function ExpressionModal({ isOpen, onClose, onSuccess, expression
                 }
             }
         });
-        reset();
+        reset(data);
         onSuccess();
     };
 

@@ -85,7 +85,7 @@ export const GET_CHARTS = graphql(`
 export const GET_CONTROLS = graphql(`
     query GetControls {
       controls {
-        deviceId
+        id
         name
         kind
         stateKey
@@ -206,7 +206,10 @@ export const GET_TOPIC_DETAILS = graphql(`
 
 export const SET_DEVICE = graphql(`
   mutation SetDevice($input: SetDeviceInput!) {
-    setDevice(input: $input)
+    setDevice(input: $input) {
+      id
+      state
+    }
   }
 `);
 

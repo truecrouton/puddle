@@ -19,7 +19,7 @@ experiment('run automations with preset conditions', () => {
 
     before((async () => {
         process.env.BASE_TOPIC = 'zigbee2mqtt';
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {

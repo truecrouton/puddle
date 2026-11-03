@@ -10,7 +10,6 @@ Unless required by applicable law or agreed to in writing, software distributed 
 */
 
 import dotenv from 'dotenv';
-import * as mqtt from "mqtt";
 import { init, start } from "./server";
 import { cacheInit, storageInit, storeMessage } from "./storage";
 import { startScheduler } from "./schedule";
@@ -19,13 +18,12 @@ import { triggerTopicAutomations } from "./automation";
 import { loadPlugins } from "./plugin";
 import { puddlePathRoot } from './path-anchor';
 import { initFastify } from './graphql/server';
-
-export const mqttClient = mqtt.connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
+import { mqttClient } from './mqtt';
 
 const puddleInit = async () => {
     dotenv.config({ path: `${puddlePathRoot}/../puddle.env` });
 
-    storageInit({ fileMustExist: true });
+    const db = storageInit(`${puddlePathRoot}/../data/puddle.sqlite`);
     cacheInit();
 
     process.env.BASE_TOPIC = process.env.BASE_TOPIC || 'zigbee2mqtt';
@@ -57,7 +55,7 @@ const puddleInit = async () => {
         .filter(Boolean);
     loadPlugins(`${puddlePathRoot}/plugin/`, pluginDirs, { logger: console, mqttClient: mqttClient });
 
-    initFastify();
+    initFastify(db);
 
     if (process.env.LEGACY_WEBAPP === 'YES') init().then(() => start());
 };

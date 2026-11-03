@@ -13,12 +13,12 @@ const lab = Lab.script();
 const { afterEach, before, beforeEach, experiment, test } = lab;
 export { lab };
 
-experiment('evaluate expressions', () => {
+experiment.only('evaluate expressions', () => {
     let server: Server;
 
     before((async () => {
         process.env.BASE_TOPIC = 'zigbee2mqtt';
-        storageInit({ fileMustExist: true });
+        storageInit();
     }));
 
     beforeEach(async () => {
@@ -158,5 +158,9 @@ experiment('evaluate expressions', () => {
         expect(evaluate(`time <= '${lastHour}'`)).to.equal(false);
         expect(evaluate(`time > '${lastHour}'`)).to.equal(true);
         expect(evaluate(`time >= '${lastHour}'`)).to.equal(true);
+    });
+
+    test('function evaluation', async () => {
+        expect(evaluate('35 < toCelsius(35)')).to.equal(true);
     });
 });

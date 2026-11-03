@@ -1,6 +1,11 @@
 import * as ohm from 'ohm-js';
 import { cacheGet, db } from "./storage";
 import { checkLastCondition, presetValue } from "./automation";
+import { celsiusToFahrenheit } from './helper';
+
+const functions: Record<string, (...args: number[]) => any> = {
+  toCelsius: (f: number) => celsiusToFahrenheit(f)
+};
 
 const automationGrammar = ohm.grammar(String.raw`
     automationGrammar {
@@ -36,12 +41,14 @@ const automationGrammar = ohm.grammar(String.raw`
             | PriExp
 
       PriExp =
+            | fn "(" Exp ")" -- fn
             | "(" Exp ")"   -- paren
             | string
             | number
             | preset
             | ident
 
+      fn = letter (letter | digit)*
       preset 
             = caseInsensitive<"date"> 
             | caseInsensitive<"time"> 
@@ -199,6 +206,14 @@ export function evaluate(expression: string | undefined) {
     },
     MulExp_div(a, _, b) {
       return a.eval() / b.eval();
+    },
+    PriExp_fn(fn, _open, expr, _close) {
+      const fnName = fn.sourceString;
+      const evaluated = expr.eval();
+      if (functions[fnName]) {
+        return functions[fnName](evaluated);
+      }
+      throw new Error(`Unknown function: ${fnName}`);
     },
     PriExp_paren(_open, inside, _close) {
       return inside.eval();

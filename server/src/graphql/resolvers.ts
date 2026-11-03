@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 import { cacheGet, cachePairsGet, sqliteDate } from '../storage';
 import { scheduledJobs } from 'node-schedule';
 import { dailySchedulerJob, scheduleSunAutomation, scheduleTimeAutomation } from '../schedule';
-import { ApolloServerContext } from './context';
+import { ApolloServerContext } from './server';
 import { getTopicIds } from '../expressions';
 import { parseISO } from 'date-fns';
 import { puddlePathRoot } from '../path-anchor';
@@ -155,7 +155,7 @@ export const resolvers: Resolvers = {
             const favorites = stmt.all() as Record<string, any>[];
 
             const camelFavorites = favorites.map((f) => {
-                const value = cacheGet(f.topic_id, f.state_key) || '?';
+                const value = cacheGet(f.topic_id, f.state_key) ?? '?';
                 return keysToCamelCase({ ...f, state: value }) as Favorite;
             });
             return camelFavorites;
