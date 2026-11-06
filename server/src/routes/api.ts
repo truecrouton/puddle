@@ -291,7 +291,7 @@ async function favoriteStatesGet(request: Request, h: ResponseToolkit): Promise<
 
         return {
             ...c,
-            state: displayFarenheit && c.key === 'temperature' ? celsiusToFahrenheit(value) : value
+            state: displayFarenheit && c.key === 'temperature' ? celsiusToFahrenheit(Number(value)) : value
         };
     });
 
@@ -311,7 +311,7 @@ async function pairsGet(request: Request, h: ResponseToolkit): Promise<ResponseO
     const pairs = <Pair[]>db.prepare('SELECT value, created_at FROM pairs where topic_id=? AND pair_id=0 AND is_object=0 AND name=? AND created_at>=? AND created_at<=?').all(topicId, name, utcStart, utcEnd);
 
     const displayFarenheit = name === 'temperature' && process.env.TEMPERATURE_CONVERT_TO === 'F';
-    const convertedPairs = pairs.map((p) => displayFarenheit ? { ...p, value: celsiusToFahrenheit(p.value) } : p);
+    const convertedPairs = pairs.map((p) => displayFarenheit ? { ...p, value: celsiusToFahrenheit(Number(p.value)) } : p);
 
     return h.response({ pairs: convertedPairs });
 }

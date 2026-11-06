@@ -4,6 +4,7 @@ import { storageInit, storeMessage } from '../src/storage';
 import { randWord } from '@ngneat/falso';
 import { format, subHours } from 'date-fns';
 import { initFastify } from '../src/graphql/server';
+import { createTopicFactory } from './utils/factories';
 
 beforeAll(async () => {
     process.env.BASE_TOPIC = 'zigbee2mqtt';
@@ -142,5 +143,19 @@ test('preset evaluation', async () => {
 });
 
 test('function evaluation', async () => {
-    expect(evaluate('35 < toCelsius(35)')).toEqual(true);
+    expect(evaluate('34 < toCelsius(95)')).toEqual(true);
+    expect(evaluate('36 > toCelsius(95)')).toEqual(true);
+
+    const topic = createTopicFactory();
+    const topicId = storeMessage(topic.topic, '{"temperature":35,"humidity":32,"update":"available"}');
+    expect(topicId).toBeGreaterThan(0);
+
+    const subTopic = topic.topic.split('/')[1];
+    expect(evaluate(`toCelsius(94) < ${subTopic}.temperature`)).toEqual(true);
+    expect(evaluate(`toCelsius(96) > ${subTopic}.temperature`)).toEqual(true);
+
+    storeMessage(topic.topic, '{"temperature":38,"humidity":32,"update":"available"}');
+    expect(evaluate(`${subTopic}.temperature >> toCelsius(99)`)).toEqual(true);
+    expect(evaluate(`${subTopic}.temperature >> toCelsius(100)`)).toEqual(true);
+    expect(evaluate(`${subTopic}.temperature >> toCelsius(101)`)).toEqual(false);
 });

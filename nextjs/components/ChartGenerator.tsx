@@ -141,8 +141,8 @@ function PairChart({ chart }: PairChartProps) {
 
             return {
                 createdAt: format(point.x, hoursDiff > 30 ? 'M/d/yy h:ma' : 'h:mma'),
-                value: toF ? celsiusToFahrenheit(point.y) : point.y,
-                sma: toF ? celsiusToFahrenheit(movingAverage) : movingAverage,
+                value: toF ? celsiusToFahrenheit(point.y).toFixed(2) : point.y,
+                sma: toF ? celsiusToFahrenheit(movingAverage).toFixed(2) : movingAverage,
                 timestamp: format(point.x, 'MM/dd/yyyy hh:mma')
             };
         });

@@ -40,11 +40,11 @@ export const zodUpsertAutomationSchema = z.object({
         (val) => ["time", "sun", "topic", "user"].includes(val),
         { error: 'Please select a trigger.' }
     ),
-    triggerAt: z.string().max(5, 'Trigger at must be in 24 hour HH:MM format.').nullable(),
-    position: z.string().max(15).nullable(),
-    topicId: z.coerce.number().int().nonnegative(),
-    triggerKey: z.string().max(30, 'Trigger key must be less than 30 characters.').nullable(),
-    triggerValue: z.string().max(20, 'Trigger value must be less than 20 characters.').nullable(),
+    triggerAt: z.string().max(5, 'Trigger at must be in 24 hour HH:MM format.').optional(),
+    position: z.string().max(15).optional(),
+    topicId: z.coerce.number().int().nonnegative().optional(),
+    triggerKey: z.string().max(30, 'Trigger key must be less than 30 characters.').optional(),
+    triggerValue: z.string().max(20, 'Trigger value must be less than 20 characters.').optional(),
     isControlShown: z.boolean(),
 }).refine((data) => {
     if (data.trigger == 'time') {
@@ -52,19 +52,13 @@ export const zodUpsertAutomationSchema = z.object({
         return result.success;
     }
     return true;
-}, { error: 'Please select a topic.', path: ['topicId'] }).refine((data) => {
+}, { error: 'Please select a topic.', path: ['trigger'] }).refine((data) => {
     if (data.trigger == 'sun') return ["solarNoon", "nadir", "sunrise", "sunset", "sunriseEnd", "sunsetStart", "dawn", "dusk", "nauticalDawn", "nauticalDusk", "nightEnd", "night", "goldenHourEnd", "goldenHour", "morning", "afternoon", "lateMorning", "evening"].includes(data.position ?? '');
     return true;
 }, { error: 'Incorrect position.', path: ['position'] }).refine((data) => {
-    if (data.trigger == 'topic') return data.topicId > 0;
+    if (data.trigger == 'topic') return data.topicId ?? 0 > 0;
     return true;
-}, { error: 'Please select a topic.', path: ['topicId'] }).refine((data) => {
-    if (data.trigger == 'topic') return data.triggerKey?.length ?? 0 > 0;
-    return true;
-}, { error: 'Please provide a trigger key.', path: ['triggerKey'] }).refine((data) => {
-    if (data.trigger == 'topic') return data.triggerValue?.length ?? 0 > 0;
-    return true;
-}, { error: 'Please provide a trigger value.', path: ['triggerValue'] });
+}, { error: 'Please select a topic.', path: ['topicId'] });
 
 export const zodUpsertChartInputSchema = z.object({
     id: z.coerce.number().int().nonnegative(),
@@ -102,12 +96,12 @@ export const zodUpsertExpressionSchema = z.object({
     automationId: z.coerce.number().int().nonnegative(),
     kind: z.string().max(10),
     isElseStep: z.boolean(),
-    expression: z.string().max(300, 'Expression must be less than 300 characters.').nullable(),
+    expression: z.string().max(300, 'Expression must be less than 300 characters.').optional(),
     conditionalExpressionId: z.coerce.number().int().nonnegative(),
-    topicId: z.coerce.number().int().nonnegative(),
-    message: z.string().max(500, 'Message must be less than 500 characters.').nullable(),
-    deviceId: z.coerce.number().int().nonnegative(),
-    state: z.string().max(30, 'State must be less than 30 characters.').nullable(),
+    topicId: z.coerce.number().int().nonnegative().optional(),
+    message: z.string().max(500, 'Message must be less than 500 characters.').optional(),
+    deviceId: z.coerce.number().int().nonnegative().optional(),
+    state: z.string().max(30, 'State must be less than 30 characters.').optional(),
 }).refine((data) => {
     if (data.conditionalExpressionId > 0) return ["notify", "publish", "wait", "device"].includes(data.kind);
     else return ["if", "notify", "publish", "wait", "device"].includes(data.kind);
@@ -118,7 +112,7 @@ export const zodUpsertExpressionSchema = z.object({
     if (data.isElseStep) return data.conditionalExpressionId > 0;
     return true;
 }, { error: 'Invalid conditional expression.', path: ['conditionalExpressionId'] }).refine((data) => {
-    if (data.kind == 'publish') return data.topicId > 0;
+    if (data.kind == 'publish') return data.topicId ?? 0 > 0;
     return true;
 }, { error: 'Please select a topic.', path: ['topicId'] }).refine((data) => {
     if (['publish', 'notify'].includes(data.kind)) {
@@ -132,7 +126,7 @@ export const zodUpsertExpressionSchema = z.object({
     }
     return true;
 }, { error: 'Message must be a valid JSON string.', path: ['message'] }).refine((data) => {
-    if (data.kind == 'device') return data.deviceId > 0;
+    if (data.kind == 'device') return data.deviceId ?? 0 > 0;
     return true;
 }, { error: 'Please select a device.', path: ['deviceId'] }).refine((data) => {
     if (data.kind == 'device') return data.state?.length ?? 0 > 0;

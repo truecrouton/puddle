@@ -1,4 +1,4 @@
-import { GET_DEVICE, GET_DEVICE_STUBS, SET_DEVICE, UPSERT_DEVICE, UPSERT_TOPIC } from './utils/queries';
+import { GET_CONTROLS, GET_DEVICE, GET_DEVICE_STUBS, SET_DEVICE, UPSERT_DEVICE, UPSERT_TOPIC } from './utils/queries';
 import { test, expect, beforeAll } from './utils/fixtures';
 import { createDeviceFactory, createTopicFactory } from './utils/factories';
 import { storageInit, storeMessage } from '../src/storage';
@@ -154,4 +154,36 @@ test('create and set a positionable device', async ({ executeOperation }) => {
     const setDeviceOffRes = await executeOperation(SET_DEVICE, { input: { id: deviceRes.upsertDevice.id, state: 0 } });
     expect(setDeviceOffRes.setDevice.id).toEqual(deviceRes.upsertDevice.id);
     expect(setDeviceOffRes.setDevice.state).toEqual(device.valueOff);
+});
+
+test('create and get controls', async ({ executeOperation }) => {
+    const topic = createTopicFactory();
+    const topicId = storeMessage(topic.topic, '{"humidity":88,"state":"OFF","update":{"state":"available"}}');
+    expect(topicId).toBeGreaterThan(0);
+
+    const device = createDeviceFactory({ topicId, kind: 'toggleable', stateKey: 'state' });
+    const deviceRes = await executeOperation(UPSERT_DEVICE, { input: device });
+    expect(deviceRes.upsertDevice).toBeTruthy();
+    expect(deviceRes.upsertDevice.id).toBeTypeOf('number');
+    expect(deviceRes.upsertDevice.id).toBeGreaterThan(0);
+    expect(deviceRes.upsertDevice.name).toEqual(device.name);
+
+    const getControlsRes = await executeOperation(GET_CONTROLS);
+    expect(getControlsRes.controls).toBeTypeOf('object');
+    expect(getControlsRes.controls.length).toBeGreaterThan(0);
+    expect(getControlsRes.controls).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({ id: deviceRes.upsertDevice.id, topicId, state: 'OFF' }),
+        ])
+    );
+
+    storeMessage(topic.topic, '{"humidity":88,"state":"ON","update":{"state":"available"}}');
+    const getToggledControlsRes = await executeOperation(GET_CONTROLS);
+    expect(getToggledControlsRes.controls).toBeTypeOf('object');
+    expect(getToggledControlsRes.controls.length).toBeGreaterThan(0);
+    expect(getToggledControlsRes.controls).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({ id: deviceRes.upsertDevice.id, topicId, state: 'ON' }),
+        ])
+    );
 });

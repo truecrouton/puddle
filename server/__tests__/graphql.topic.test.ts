@@ -2,7 +2,6 @@ import { GET_TOPIC_STATUS, GET_TOPICS, UPSERT_TOPIC } from './utils/queries';
 import { test, expect, beforeAll } from './utils/fixtures';
 import { createTopicFactory } from './utils/factories';
 import { storageInit, storeMessage } from '../src/storage';
-import { initFastify } from '../src/graphql/server';
 
 beforeAll(async () => {
     process.env.BASE_TOPIC = 'zigbee2mqtt';

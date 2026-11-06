@@ -29,7 +29,7 @@ export default function TopicsTable({ queryRef }: TopicsTableProps) {
     const sortedTopics = useMemo(() => {
         return sortArray(topics, 'topic');
     }, [topics]);
-
+    const baseTopic = process.env.NEXT_PUBLIC_BASE_TOPIC ?? '';
     return (
         <>
             <h3 className="text-2xl font-normal mb-6">
@@ -52,7 +52,7 @@ export default function TopicsTable({ queryRef }: TopicsTableProps) {
                             <tr key={topic.id} >
                                 <th className="font-semibold">
                                     <button className='text-left cursor-pointer' onClick={() => handleTopicClick(topic)}>
-                                        {topic.topic}
+                                        {topic.topic.indexOf(baseTopic) == 0 ? `_${topic.topic.substring(baseTopic.length)}` : topic.topic}
                                     </button>
                                 </th>
                                 <td>

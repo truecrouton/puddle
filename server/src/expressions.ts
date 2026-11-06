@@ -4,7 +4,7 @@ import { checkLastCondition, presetValue } from "./automation";
 import { celsiusToFahrenheit } from './helper';
 
 const functions: Record<string, (...args: number[]) => any> = {
-  toCelsius: (f: number) => celsiusToFahrenheit(f)
+  toCelsius: (f: number): number => (f - 32) / 1.8
 };
 
 const automationGrammar = ohm.grammar(String.raw`
