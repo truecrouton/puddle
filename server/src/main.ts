@@ -10,7 +10,6 @@ Unless required by applicable law or agreed to in writing, software distributed 
 */
 
 import dotenv from 'dotenv';
-import { init, start } from "./server";
 import { cacheInit, storageInit, storeMessage } from "./storage";
 import { startScheduler } from "./schedule";
 import { gracefulShutdown } from "node-schedule";
@@ -56,8 +55,6 @@ const puddleInit = async () => {
     loadPlugins(`${puddlePathRoot}/plugin/`, pluginDirs, { logger: console, mqttClient: mqttClient });
 
     initFastify(db);
-
-    if (process.env.LEGACY_WEBAPP === 'YES') init().then(() => start());
 };
 
 puddleInit();

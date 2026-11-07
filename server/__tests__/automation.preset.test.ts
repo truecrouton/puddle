@@ -103,12 +103,12 @@ test('generate accurate preset values', async ({ executeOperation }) => {
     expect(runRes.length).toEqual(2);
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, is_else_step: 0, conditional_expression_id: ifExpressionRes1.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes1.upsertExpression.id }),
         ])
     );
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, is_else_step: 0, conditional_expression_id: ifExpressionRes2.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes2.upsertExpression.id }),
         ])
     );
 });
@@ -225,12 +225,12 @@ test('detect increasing and decreasing values', async ({ executeOperation }) => 
     expect(runRes.length).toEqual(2);
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: publishExpressionRes2.upsertExpression.id, kind: 'publish', message: publishExpression2.message, is_else_step: 1, conditional_expression_id: ifExpressionRes2.upsertExpression.id }),
+            expect.objectContaining({ id: publishExpressionRes2.upsertExpression.id, kind: 'publish', message: publishExpression2.message, isElseStep: 1, conditionalExpressionId: ifExpressionRes2.upsertExpression.id }),
         ])
     );
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, is_else_step: 0, conditional_expression_id: ifExpressionRes1.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes1.upsertExpression.id }),
         ])
     );
 });
@@ -347,12 +347,12 @@ test('detect last values', async ({ executeOperation }) => {
     expect(runRes.length).toEqual(2);
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: publishExpressionRes1.upsertExpression.id, kind: 'publish', message: publishExpression1.message, is_else_step: 0, conditional_expression_id: ifExpressionRes2.upsertExpression.id }),
+            expect.objectContaining({ id: publishExpressionRes1.upsertExpression.id, kind: 'publish', message: publishExpression1.message, isElseStep: 0, conditionalExpressionId: ifExpressionRes2.upsertExpression.id }),
         ])
     );
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, is_else_step: 0, conditional_expression_id: ifExpressionRes1.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes1.upsertExpression.id, kind: 'device', state: deviceExpression1.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes1.upsertExpression.id }),
         ])
     );
 });

@@ -81,13 +81,13 @@ test('trigger a topic automation', async ({ executeOperation }) => {
     expect(triggerRes.length).toEqual(1);
 
     const runRes = triggerRes[0];
-    expect(runRes.automation_id).toBeTypeOf('number');
-    expect(runRes.automation_id).toBeGreaterThan(0);
+    expect(runRes.automationId).toBeTypeOf('number');
+    expect(runRes.automationId).toBeGreaterThan(0);
     expect(runRes.result).toBeTypeOf('object');
     expect(runRes.result.length).toEqual(1);
     expect(runRes.result).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, is_else_step: 0, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });
@@ -161,13 +161,13 @@ test('trigger a topic automation with a number value', async ({ executeOperation
     expect(triggerRes.length).toEqual(1);
 
     const runRes = triggerRes[0];
-    expect(runRes.automation_id).toBeTypeOf('number');
-    expect(runRes.automation_id).toBeGreaterThan(0);
+    expect(runRes.automationId).toBeTypeOf('number');
+    expect(runRes.automationId).toBeGreaterThan(0);
     expect(runRes.result).toBeTypeOf('object');
     expect(runRes.result.length).toEqual(1);
     expect(runRes.result).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, is_else_step: 0, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });
@@ -239,13 +239,13 @@ test('trigger a topic automation without a trigger key', async ({ executeOperati
     expect(triggerRes.length).toEqual(1);
 
     const runRes = triggerRes[0];
-    expect(runRes.automation_id).toBeTypeOf('number');
-    expect(runRes.automation_id).toBeGreaterThan(0);
+    expect(runRes.automationId).toBeTypeOf('number');
+    expect(runRes.automationId).toBeGreaterThan(0);
     expect(runRes.result).toBeTypeOf('object');
     expect(runRes.result.length).toEqual(1);
     expect(runRes.result).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, is_else_step: 0, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });
@@ -316,18 +316,18 @@ test('trigger a sun automation', async ({ executeOperation }) => {
     expect(triggerRes.length).toBeGreaterThan(0);
     expect(triggerRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ automation_id: automationRes.upsertAutomation.id }),
+            expect.objectContaining({ automationId: automationRes.upsertAutomation.id }),
         ])
     );
 
-    const runRes = triggerRes.find((r) => r.automation_id === automationRes.upsertAutomation.id)!;
-    expect(runRes.automation_id).toBeTypeOf('number');
-    expect(runRes.automation_id).toBeGreaterThan(0);
+    const runRes = triggerRes.find((r) => r.automationId === automationRes.upsertAutomation.id)!;
+    expect(runRes.automationId).toBeTypeOf('number');
+    expect(runRes.automationId).toBeGreaterThan(0);
     expect(runRes.result).toBeTypeOf('object');
     expect(runRes.result.length).toEqual(1);
     expect(runRes.result).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, is_else_step: 0, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });
@@ -398,18 +398,18 @@ test('trigger a time automation', async ({ executeOperation }) => {
     expect(triggerRes.length).toBeGreaterThan(0);
     expect(triggerRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ automation_id: automationRes.upsertAutomation.id }),
+            expect.objectContaining({ automationId: automationRes.upsertAutomation.id }),
         ])
     );
 
-    const runRes = triggerRes.find((r) => r.automation_id === automationRes.upsertAutomation.id)!;
-    expect(runRes.automation_id).toBeTypeOf('number');
-    expect(runRes.automation_id).toBeGreaterThan(0);
+    const runRes = triggerRes.find((r) => r.automationId === automationRes.upsertAutomation.id)!;
+    expect(runRes.automationId).toBeTypeOf('number');
+    expect(runRes.automationId).toBeGreaterThan(0);
     expect(runRes.result).toBeTypeOf('object');
     expect(runRes.result.length).toEqual(1);
     expect(runRes.result).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, is_else_step: 0, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes.upsertExpression.id, kind: 'device', state: deviceExpression.state, isElseStep: 0, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });

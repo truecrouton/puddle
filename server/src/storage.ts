@@ -3,7 +3,7 @@ import { addMinutes, format } from 'date-fns';
 import { LRUCache } from 'lru-cache';
 import { puddlePathRoot } from './path-anchor';
 
-export interface Automation {
+export interface DbAutomation {
     id: number,
     name: string;
     position: "solarNoon" | "nadir" | "sunrise" | "sunset" | "sunriseEnd" | "sunsetStart" | "dawn" | "dusk" | "nauticalDawn" | "nauticalDusk" | "nightEnd" | "night" | "goldenHourEnd" | "goldenHour";
@@ -13,35 +13,33 @@ export interface Automation {
     trigger_key: string;
     trigger_value: string;
     is_control_shown: boolean;
-    steps: AutomationStep[];
-    conditions: [];
 }
 
-export interface AutomationStep {
-    step_id: number,
-    kind: "if" | "notify" | "publish" | "wait",
-    conditional_step_id: number,
-    is_else_step: boolean,
-    topic_id: number,
-    message: string;
+export interface DbExpression {
+    conditional_expression_id?: number;
+    device_id?: number;
+    expression?: string;
+    id?: number;
+    is_else_step?: boolean;
+    kind: 'if' | 'notify' | 'publish' | 'wait' | 'device';
+    message?: string;
+    state?: number;
+    topic_id?: number;
 }
 
-export interface Chart {
-    chart_id: number;
-    topic_id: number;
-    name: string;
-    key: string;
-}
-
-export interface DeviceStatusKey {
-    status_key_id: number;
+export interface DbDevice {
     device_id: number;
-    name?: string;
-    status_key: string;
-    is_shown: boolean;
+    kind: 'controlling' | 'dimmable' | 'informational' | 'positionable' | 'toggleable';
+    name: string;
+    set_key?: string;
+    set_suffix?: string;
+    state_key: string;
+    topic_id: number;
+    value_off?: string;
+    value_on?: string;
 }
 
-export interface Pair {
+export interface DbPair {
     topic_id: number,
     pair_id: number | null,
     name: string,
@@ -49,17 +47,11 @@ export interface Pair {
     is_object: boolean,
 }
 
-export interface Topic {
+export interface DbTopic {
     topic_id: number;
     topic: string;
     description: string | null,
     [key: string]: string | number | null;
-}
-
-export interface User {
-    user_id: number;
-    username: string;
-    is_admin: boolean;
 }
 
 export let db: BetterSqllite3.Database;
@@ -75,12 +67,12 @@ export function cacheInit() {
     const latestPairStmt = db.prepare('SELECT MAX(created_at) FROM pairs WHERE topic_id=? AND is_object=0');
     const pairsStmt = db.prepare('SELECT pair_id, topic_id, name, value, created_at FROM pairs where topic_id=? AND created_at=? AND is_object=0 AND pair_id=0');
 
-    const topics = <Topic[]>db.prepare('SELECT id as topic_id, topic from topics').all();
+    const topics = <DbTopic[]>db.prepare('SELECT id as topic_id, topic from topics').all();
     for (const topic of topics) {
         const latestTimestamp = latestPairStmt.pluck().get(topic.topic_id);
         if (!latestTimestamp) continue;
 
-        const pairs = <Pair[]>pairsStmt.all(topic.topic_id, latestTimestamp);
+        const pairs = <DbPair[]>pairsStmt.all(topic.topic_id, latestTimestamp);
         pairs.forEach((pair) => {
             cacheSet(topic.topic_id, pair.name, pair.value, pair.pair_id || 0);
         });
@@ -140,7 +132,7 @@ export function storeMessage(topic: string, jsonString: string, creationDate?: D
     db.transaction(() => {
         const topicRes = db.prepare('INSERT OR IGNORE INTO topics (topic) VALUES(?)').run(topic);
         if (topicRes.changes === 0) {
-            const storedTopic = <Topic>db.prepare('SELECT id as topic_id FROM topics where topic=?').get(topic);
+            const storedTopic = <DbTopic>db.prepare('SELECT id as topic_id FROM topics where topic=?').get(topic);
             topicId = storedTopic.topic_id;
         }
         else {

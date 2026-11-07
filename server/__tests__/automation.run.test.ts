@@ -101,12 +101,12 @@ test('running an automation', async ({ executeOperation }) => {
     expect(runRes.length).toEqual(2);
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: publishExpressionRes.upsertExpression.id, kind: 'publish', message: publishExpression.message, is_else_step: 0, conditional_expression_id: ifExpressionRes2.upsertExpression.id }),
+            expect.objectContaining({ id: publishExpressionRes.upsertExpression.id, kind: 'publish', message: publishExpression.message, isElseStep: 0, conditionalExpressionId: ifExpressionRes2.upsertExpression.id }),
         ])
     );
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, is_else_step: 0, conditional_expression_id: 0 }),
+            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, isElseStep: 0, conditionalExpressionId: 0 }),
         ])
     );
 });
@@ -190,12 +190,12 @@ test('running an automation with else steps', async ({ executeOperation }) => {
     expect(runRes.length).toEqual(2);
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: publishExpressionRes.upsertExpression.id, kind: 'publish', message: publishExpression.message, is_else_step: 0, conditional_expression_id: 0 }),
+            expect.objectContaining({ id: publishExpressionRes.upsertExpression.id, kind: 'publish', message: publishExpression.message, isElseStep: 0, conditionalExpressionId: 0 }),
         ])
     );
     expect(runRes).toEqual(
         expect.arrayContaining([
-            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, is_else_step: 1, conditional_expression_id: ifExpressionRes.upsertExpression.id }),
+            expect.objectContaining({ id: deviceExpressionRes2.upsertExpression.id, kind: 'device', state: deviceExpression2.state, isElseStep: 1, conditionalExpressionId: ifExpressionRes.upsertExpression.id }),
         ])
     );
 });

@@ -3,9 +3,7 @@
 
 ![Home page](repo/puddle.svg "Puddle")
 
-*(Currently moving the project to Next.js/React and graphql - setup is messy)*
-
-A simple home control and automation runner for [mqtt](https://mqtt.org). Provides an API for custom frontends or use the included web interface. Runs on [Node.js](https://nodejs.org). 
+A simple home control and automation runner for [mqtt](https://mqtt.org). Provides an API for custom frontends or use the included web interface. Runs on [Node.js](https://nodejs.org). *Screenshots below!* 🤩
 
 Developed for use with zigbee devices through [zigbee2mqtt](https://www.zigbee2mqtt.io/), but any mqtt devices *should* 🤞 work.
 
@@ -29,43 +27,49 @@ To setup puddle (now a monorepo) run this in the `root (likely puddle)` folder:
 [puddle]$ npm install
 ```
 
-To setup db, run this in the `server` folder:
+To setup the database, run this in the `server` folder:
 ```console
 [server]$ npm run migrate latest
 ```
 
-To build and until this is more hashed out (plugins are new) you must run `npm install` for each plugin in `src/plugin/` (e.g., in `src/plugin/wemo/wemo-client`). Then to build the server, run this in the `server` folder: 
+To build, run the following in the `root` folder. This will build the server, without plugins, and the webapp. If you want to build the server and webapp separately just run `npm run build` in the respective folders.
 
 ```console
-[server]$ npm run build:all
+[puddle]$ npm run build
 ```
 
-To build the nextjs frontend, run this in the `nextjs` folder: 
+To build plugins you *must* first run `npm install` for each plugin in `src/plugin/` (e.g., in `src/plugin/wemo/wemo-client`). Then to build the server, run this in the `server` folder: 
 
 ```console
-[nextjs]$ npm run build
+[server]$ npm run build:plugins
 ```
-
-There are other `npm` scripts to build the project in parts.
 
 To start puddle server:
 ```console
 [server]$ npm run start 
 ```
 
-To start Next.js:
+To start the webapp:
 ```console
 [nextjs]$ npm run start 
 ```
 
 The web frontend should now be running at `http://localhost:3000` (unless you've changed the default port). You may need to setup CORs.
 
-To run tests, make sure `secret.env` exists or some user tests will fail. You can copy `secret.env.sample` to do this. Then:
+## Development Mode
+To run in dev mode, run this in the `root` folder:
+
 ```console
-[server]$ npm run vitest 
+[puddle]$ npm run dev
 ```
 
-## Features / Screenshots
+## Tests
+To run tests, make sure `secret.env` exists or some user tests will fail. You can copy `secret.env.sample` to do this. Then:
+```console
+[server]$ npm run test 
+```
+
+## Screenshots
 Home page
 
 ![Home page](repo/screen_home.png "Puddle home page")
@@ -89,9 +93,3 @@ Control a positionable device
 ## Development
 
 Puddle is beta software and, along with this `README.md`, is a work in progress.
-
-Start the backend and web frontend in watch mode with:
-
-```console
-[puddle]$ npm run dev
-```

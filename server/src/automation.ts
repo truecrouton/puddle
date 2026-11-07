@@ -1,15 +1,15 @@
 import { compareAsc, compareDesc, endOfDay, endOfMonth, format, startOfDay, addMilliseconds, subMilliseconds, parseISO, differenceInSeconds, addMinutes } from 'date-fns';
 import { connect } from "mqtt";
 import { getTimes } from 'suncalc';
-import { db, Automation, Topic, cacheGet } from "./storage";
-import { AutomationExpressionInterface, DeviceInterface } from './routes/interfaces';
+import { db, DbAutomation, DbTopic, cacheGet, DbExpression, DbDevice } from "./storage";
 import { evaluate } from './expressions';
 import { setTimeout } from 'timers/promises';
 import { request, RequestOptions } from 'http';
-import { object } from 'joi';
 import { URL } from 'url';
+import { Expression } from 'puddle-graphql';
+import { keysToCamelCase } from './helper';
 
-interface AutomationExpressions { automation_id: number, result: AutomationExpressionInterface[]; }
+interface AutomationExpressions { automationId: number, result: Expression[]; }
 
 const mqtt = connect(`mqtt://${process.env.MQTT_HOST || '127.0.0.1'}`);
 
@@ -94,14 +94,14 @@ export function presetValue(preset: string): string {
     return value;
 }
 
-export function savedAutomations(): Automation[] {
-    const automations = <Automation[]>db.prepare('SELECT id, trigger, trigger_at, position FROM automations WHERE trigger IN (?, ?)').all('sun', 'time');
+export function savedAutomations(): DbAutomation[] {
+    const automations = <DbAutomation[]>db.prepare('SELECT id, trigger, trigger_at, position FROM automations WHERE trigger IN (?, ?)').all('sun', 'time');
 
     return automations;
 }
 
-export async function runAutomation(automationId: number): Promise<AutomationExpressionInterface[]> {
-    const exprs = <AutomationExpressionInterface[]>db.prepare('SELECT id, kind, expression, conditional_expression_id, is_else_step, topic_id, message, device_id, state FROM automation_expressions where automation_id=?').all(automationId);
+export async function runAutomation(automationId: number): Promise<Expression[]> {
+    const exprs = db.prepare('SELECT id, kind, expression, conditional_expression_id, is_else_step, topic_id, message, device_id, state FROM automation_expressions where automation_id=?').all(automationId) as DbExpression[];
     const topicStmt = db.prepare('SELECT topic FROM topics where id=?');
 
     if (!exprs.length) return [];
@@ -109,7 +109,7 @@ export async function runAutomation(automationId: number): Promise<AutomationExp
     const conditionalSteps = ['if'];
     const conditionalResults = exprs.reduce((res, expr) => conditionalSteps.includes(expr.kind) && evaluate(expr.expression) ? [...res, expr.id!] : res, <number[]>[]);
 
-    const executableSteps: AutomationExpressionInterface[] = [];
+    const executableSteps = [];
     for (const expr of exprs.filter((e) => !conditionalSteps.includes(e.kind))) {
         if (expr.conditional_expression_id && (!expr.is_else_step && !conditionalResults.includes(expr.conditional_expression_id)) || (expr.is_else_step && conditionalResults.includes(expr.conditional_expression_id || 0))) {
             continue;
@@ -171,8 +171,8 @@ export async function runAutomation(automationId: number): Promise<AutomationExp
             }
         }
         else if (expr.kind == 'device') {
-            const device = <DeviceInterface>db.prepare('SELECT id, kind, topic_id, set_key, state_key, set_suffix, value_on, value_off FROM devices where id=?').get(expr.device_id);
-            const topic = <Topic>topicStmt.get(device.topic_id);
+            const device = db.prepare('SELECT id, kind, topic_id, set_key, state_key, set_suffix, value_on, value_off FROM devices where id=?').get(expr.device_id) as DbDevice;
+            const topic = <DbTopic>topicStmt.get(device.topic_id);
 
             const currentValue = cacheGet(device.topic_id, device.state_key);
             if (expr.state != currentValue) {
@@ -192,7 +192,7 @@ export async function runAutomation(automationId: number): Promise<AutomationExp
             }
         }
         else if (expr.kind == 'publish') {
-            const topic = <Topic>topicStmt.get(expr.topic_id);
+            const topic = <DbTopic>topicStmt.get(expr.topic_id);
             try {
                 JSON.parse(expr.message!);
             }
@@ -204,11 +204,11 @@ export async function runAutomation(automationId: number): Promise<AutomationExp
         //else if (expr.kind == 'wait') await setTimeout(50);
     }
 
-    return executableSteps;
+    return executableSteps.map((e) => keysToCamelCase(e) as Expression);
 }
 
 export async function triggerTopicAutomations(topic: string, jsonString: string): Promise<AutomationExpressions[]> {
-    const automations = <Automation[]>db.prepare('SELECT automations.id, trigger_key, trigger_value FROM topics LEFT JOIN automations ON automations.topic_id=topics.id WHERE trigger=? and topic=?').all('topic', topic);
+    const automations = <DbAutomation[]>db.prepare('SELECT automations.id, trigger_key, trigger_value FROM topics LEFT JOIN automations ON automations.topic_id=topics.id WHERE trigger=? and topic=?').all('topic', topic);
 
     const json = JSON.parse(jsonString);
     const triggerAutomations = automations.filter((a) => {
@@ -219,22 +219,22 @@ export async function triggerTopicAutomations(topic: string, jsonString: string)
     });
 
     return Promise.all(triggerAutomations.map((ta) => runAutomation(ta.id).then(
-        (results) => ({ automation_id: ta.id, result: results })
+        (results) => ({ automationId: ta.id, result: results })
     )));
 }
 
 export async function triggerSunAutomations(position: string): Promise<AutomationExpressions[]> {
-    const automations = <Automation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and position=?').all('sun', position);
+    const automations = <DbAutomation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and position=?').all('sun', position);
 
     return Promise.all(automations.map((a) => runAutomation(a.id).then(
-        (results) => ({ automation_id: a.id, result: results })
+        (results) => ({ automationId: a.id, result: results })
     )));
 }
 
 export async function triggerTimeAutomations(time: string): Promise<AutomationExpressions[]> {
-    const automations = <Automation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and trigger_at=?').all('time', time);
+    const automations = <DbAutomation[]>db.prepare('SELECT id FROM automations WHERE trigger=? and trigger_at=?').all('time', time);
 
     return Promise.all(automations.map((a) => runAutomation(a.id).then(
-        (results) => ({ automation_id: a.id, result: results })
+        (results) => ({ automationId: a.id, result: results })
     )));
 }
